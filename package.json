@@ -9,7 +9,8 @@
   },
   "activationEvents": [
     "onCommand:itforce-helper.helloWorld",
-    "onCommand:itforce-helper.generate"
+    "onCommand:itforce-helper.generate",
+    "onStartupFinished"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -22,7 +23,40 @@
         "command": "itforce-helper.generate",
         "title": "ITForce: Generate Code"
       }
-    ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "itforce-helper",
+          "title": "ITForce Helper",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "itforce-helper": [
+        {
+          "type": "webview",
+          "id": "itforce-helper.chatView",
+          "name": "ITForce Assistant"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "ITForce Helper",
+      "properties": {
+        "itforceHelper.deepseekApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API key for DeepSeek AI"
+        },
+        "itforceHelper.deepseekApiUrl": {
+          "type": "string",
+          "default": "https://api.deepseek.com/v1/chat/completions",
+          "description": "API URL for DeepSeek AI"
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
@@ -37,6 +71,9 @@
     "check-types": "tsc --noEmit",
     "lint": "eslint src",
     "test": "@vscode/test-electron ."
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.12"
   },
   "devDependencies": {
     "@types/eslint": "^9.6.1",

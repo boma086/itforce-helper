@@ -9,5 +9,7 @@
         "dist": true // set this to false to include "dist" folder in search results
     },
     // Turn off tsc task auto detection since we have the necessary tasks as npm scripts
-    "typescript.tsc.autoDetect": "off"
+    "typescript.tsc.autoDetect": "off",
+    "itforceHelper.deepseekApiKey": "sk-77bb1f8ce5b146138421c9e60ee04102",
+    "itforceHelper.deepseekApiUrl": "https://api.deepseek.com/v1/chat/completions"
 }

@@ -1,45 +1,74 @@
 # ITForce Helper
 
-VS Code extension integrating AI capabilities for development assistance.
+A powerful VS Code extension that enhances development workflow with AI assistance and code quality tools.
 
-## Features
+## Key Features
 
-### AI Integration
-- Code generation powered by DeepSeek AI
-- AI-assisted development planning
-- Extensible architecture supporting multiple AI providers (OpenAI coming soon)
+🤖 **AI-Powered Development**
+- Code generation using DeepSeek AI
+- Smart development planning and suggestions
+- Multi-AI provider support (DeepSeek, OpenAI coming soon)
 
-### Code Quality Tools
-- Automatic code linting and fixing
-- ESLint integration
-- TypeScript type checking
+🛠️ **Code Quality**
 - Real-time code validation
+- Automatic ESLint integration
+- TypeScript type checking
+- Intelligent code fixes
 
-### Version Control
-- Code checkpoint management
-- Create, restore, and delete checkpoints
+🔄 **Version Management**
+- Smart code checkpoint system
+- Quick checkpoint creation/restoration
 - Safe version control operations
 
-### Security
-- Safe command execution with whitelist protection
+🔒 **Security**
 - Secure API key management
+- Whitelisted command execution
 - Protected operation modes
 
-## Setup
+## Installation
 
-1. Install dependencies:
+1. Install from VS Code Marketplace or download `.vsix` file
+2. Install dependencies:
 ```bash
 npm install
 ```
 
-2. Configure DeepSeek API:
-   - Open VS Code settings
+3. Configure DeepSeek API:
+   - Open VS Code settings (`Ctrl+,` or `Cmd+,`)
    - Search for "ITForce"
    - Add your DeepSeek API key
-   - (Optional) Configure custom API URL
+   - Optional: Set custom API URL
+
+## Usage
+
+### Available Commands
+- `ITForce: Generate Code` - AI-powered code generation
+- `ITForce: Hello World` - Test extension setup
+
+### Settings
+- `itforceHelper.deepseekApiKey`: Your DeepSeek API key
+- `itforceHelper.deepseekApiUrl`: Custom API URL (default: https://api.deepseek.com/v1/chat/completions)
+- `itforceHelper.autoValidate`: Toggle automatic code validation
 
 ## Development
 
+### Prerequisites
+- VS Code ^1.98.0
+- Node.js
+- npm
+
+### Setup
+1. Clone repository
+2. Install recommended extensions:
+   - ESLint
+   - Extension Test Runner
+   - esbuild Problem Matchers
+3. Install dependencies:
+```bash
+npm install
+```
+
+### Development Commands
 ```bash
 npm run watch     # Start development mode
 npm run compile   # Build extension
@@ -47,155 +76,44 @@ npm test         # Run tests
 npm run lint     # Run linter
 ```
 
-## Extension Settings
-
-This extension contributes the following settings:
-
-* `itforceHelper.deepseekApiKey`: DeepSeek API Key
-* `itforceHelper.deepseekApiUrl`: DeepSeek API URL (default: https://api.deepseek.com/v1/chat/completions)
-* `itforceHelper.autoValidate`: Enable/disable automatic code validation
-
-## Commands
-
-* `itforce-helper.generate`: Generate code using AI
-* `itforce-helper.helloWorld`: Test command
-
-## Requirements
-
-- VS Code ^1.98.0
-- Node.js
-- npm
-
-## Extension Development
-
-1. Clone the repository
-2. Install recommended VS Code extensions:
-   - ESLint
-   - Extension Test Runner
-   - esbuild Problem Matchers
-
-3. Start development:
-   - Press F5 to open a new window with your extension loaded
-   - Run tests using the Testing view in VS Code
-   - Make changes in `src/extension.ts`
-   - Reload VS Code window to load changes (`Ctrl+R` or `Cmd+R`)
-
-### Making Changes
-
-1. Code Structure:
-   - `src/extension.ts`: Main extension entry point
-   - `src/agents/`: AI and planning related functionality
-   - `src/validation/`: Code validation and linting
-   - `src/commands/`: Command implementations
-   - `src/modals/`: AI service adapters
-
-2. Development Workflow:
-   ```bash
-   # Start the development watch mode
-   npm run watch
-
-   # In a separate terminal, run tests in watch mode
-   npm run watch-tests
-   ```
-
-3. Before Committing:
-   ```bash
-   # Run type checking
-   npm run check-types
-
-   # Run linter
-   npm run lint
-
-   # Run all tests
-   npm test
-   ```
-
-### Testing
-
-1. Unit Tests:
-   - Located in `src/test/`
-   - Run with `npm test`
-   - Test files should end with `.test.ts`
-
-2. Writing Tests:
-   ```typescript
-   suite('Feature Test Suite', () => {
-     test('should do something', async () => {
-       // Your test code
-     });
-   });
-   ```
-
-3. Test Coverage:
-   - Run tests with coverage: `npm test -- --coverage`
-   - Coverage reports are generated in `coverage/`
-
-4. Integration Tests:
-   - Use VS Code's Extension Testing API
-   - Test real extension functionality
-   - Located in `src/test/suite/`
-
-### Debugging
-
-1. Launch Configurations:
-   - "Run Extension": Launches a new VS Code window with the extension
-   - "Extension Tests": Runs the extension tests
-
-2. Debug Tools:
-   - Use breakpoints in VS Code
-   - Check Debug Console for logs
-   - Use `console.log()` for temporary debugging
-
-3. Common Issues:
-   - If watch mode isn't working, restart with `npm run watch`
-   - Clear the extension host by reloading VS Code
-   - Check Output panel for extension logs
-
-### Building for Production
-
-1. Prepare Release:
-   ```bash
-   # Run all checks
-   npm run compile
-
-   # Create VSIX package
-   npm run package
-   ```
-
-2. Testing Release:
-   - Install the VSIX in a clean VS Code instance
-   - Test all major features
-   - Verify settings and commands
-
-## Testing
-
-- Install the Extension Test Runner
-- Run the "watch" task
-- Use Testing view or run `npm test`
-
-## Building
-
-```bash
-npm run package   # Create VSIX package
+### Project Structure
+```
+src/
+├── extension.ts     # Extension entry point
+├── agents/         # AI and planning logic
+├── validation/     # Code validation
+├── commands/       # Command implementations
+├── modals/         # AI service adapters
+└── test/          # Test files
 ```
 
-## Release Notes
+### Testing
+```bash
+npm test           # Run all tests
+npm test -- --coverage  # Run with coverage
+```
 
-### 0.0.1
-
-- Initial release
-- DeepSeek AI integration
-- Basic code generation
-- Automatic linting
-- Version control features
+### Building
+```bash
+npm run package    # Create VSIX package
+```
 
 ## Contributing
 
-1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+1. Fork repository
+2. Create feature branch
+3. Commit changes
+4. Push to branch
+5. Submit pull request
+
+## Version History
+
+### 0.0.1
+- Initial release
+- DeepSeek AI integration
+- Code generation
+- Linting support
+- Version control features
 
 ## License
 
@@ -203,4 +121,6 @@ npm run package   # Create VSIX package
 
 ---
 
-**Enjoy!**
+**Made with ❤️ by ITForce Team**
+
+
