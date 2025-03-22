@@ -1,126 +1,78 @@
-# ITForce Helper
+# ITForce Helper / ITForce 助手
 
 A powerful VS Code extension that enhances development workflow with AI assistance and code quality tools.
+一个强大的 VS Code 扩展，通过 AI 辅助和代码质量工具增强开发工作流程。
 
-## Key Features
+## Key Features / 主要特性
 
-🤖 **AI-Powered Development**
-- Code generation using DeepSeek AI
-- Smart development planning and suggestions
-- Multi-AI provider support (DeepSeek, OpenAI coming soon)
+🤖 **AI-Powered Development / AI 驱动开发**
+- Code generation using DeepSeek AI / 使用 DeepSeek AI 生成代码
+- Smart development planning and suggestions / 智能开发规划和建议
+- Built-in AI chat interface / 内置 AI 聊天界面
 
-🛠️ **Code Quality**
-- Real-time code validation
-- Automatic ESLint integration
-- TypeScript type checking
-- Intelligent code fixes
+🛠️ **Code Quality / 代码质量**
+- Real-time code validation / 实时代码验证
+- Automatic code fixes / 自动代码修复
+- TypeScript type checking / TypeScript 类型检查
 
-🔄 **Version Management**
-- Smart code checkpoint system
-- Quick checkpoint creation/restoration
-- Safe version control operations
+🔄 **Version Management / 版本管理**
+- Smart code checkpoint system / 智能代码检查点系统
+- Quick checkpoint creation/restoration / 快速创建和恢复检查点
 
-🔒 **Security**
-- Secure API key management
-- Whitelisted command execution
-- Protected operation modes
+## Installation / 安装
 
-## Installation
+1. Install from VS Code Marketplace / 从 VS Code 商店安装
+2. Configure DeepSeek API key (required) / 配置 DeepSeek API 密钥（必需）
 
-1. Install from VS Code Marketplace or download `.vsix` file
-2. Install dependencies:
-```bash
-npm install
-```
+## Configuration / 配置
 
-3. Configure DeepSeek API:
-   - Open VS Code settings (`Ctrl+,` or `Cmd+,`)
-   - Search for "ITForce"
-   - Add your DeepSeek API key
-   - Optional: Set custom API URL
+Configure the DeepSeek API key using one of these methods:
+通过以下方式之一配置 DeepSeek API 密钥：
 
-## Usage
+1. **VS Code Settings (Recommended) / VS Code 设置（推荐）**:
+   - Open VS Code settings (`Ctrl+,` or `Cmd+,`) / 打开 VS Code 设置
+   - Search for "ITForce" / 搜索 "ITForce"
+   - Add your DeepSeek API key in `itforceHelper.deepseekApiKey` / 在 `itforceHelper.deepseekApiKey` 中添加你的 API 密钥
 
-### Available Commands
-- `ITForce: Generate Code` - AI-powered code generation
-- `ITForce: Hello World` - Test extension setup
+2. **Environment Variable / 环境变量**:
+   ```bash
+   # Windows
+   set DEEPSEEK_API_KEY=your-api-key-here
 
-### Settings
-- `itforceHelper.deepseekApiKey`: Your DeepSeek API key
-- `itforceHelper.deepseekApiUrl`: Custom API URL (default: https://api.deepseek.com/v1/chat/completions)
-- `itforceHelper.autoValidate`: Toggle automatic code validation
+   # Linux/Mac
+   export DEEPSEEK_API_KEY=your-api-key-here
+   ```
 
-## Development
+> **Note/注意**: VS Code settings take precedence over environment variables. / VS Code 设置优先于环境变量。
 
-### Prerequisites
+## Usage / 使用方法
+
+### Commands / 命令
+- `ITForce: Generate Code` - AI-powered code generation / AI 驱动的代码生成
+- `ITForce: Hello World` - Test extension setup / 测试扩展设置
+
+### Settings / 设置
+- `itforceHelper.deepseekApiKey`: DeepSeek API key / DeepSeek API 密钥
+- `itforceHelper.deepseekApiUrl`: Custom API URL (optional) / 自定义 API URL（可选）
+
+## Development / 开发
+
+### Prerequisites / 前提条件
 - VS Code ^1.98.0
 - Node.js
 - npm
 
-### Setup
-1. Clone repository
-2. Install recommended extensions:
-   - ESLint
-   - Extension Test Runner
-   - esbuild Problem Matchers
-3. Install dependencies:
-```bash
-npm install
-```
+### Setup / 设置
+1. Clone repository / 克隆仓库
+2. Install dependencies / 安装依赖: `npm install`
+3. Run `npm run watch` for development / 运行开发模式
 
-### Development Commands
-```bash
-npm run watch     # Start development mode
-npm run compile   # Build extension
-npm test         # Run tests
-npm run lint     # Run linter
-```
+## License / 许可证
 
-### Project Structure
-```
-src/
-├── extension.ts     # Extension entry point
-├── agents/         # AI and planning logic
-├── validation/     # Code validation
-├── commands/       # Command implementations
-├── modals/         # AI service adapters
-└── test/          # Test files
-```
-
-### Testing
-```bash
-npm test           # Run all tests
-npm test -- --coverage  # Run with coverage
-```
-
-### Building
-```bash
-npm run package    # Create VSIX package
-```
-
-## Contributing
-
-1. Fork repository
-2. Create feature branch
-3. Commit changes
-4. Push to branch
-5. Submit pull request
-
-## Version History
-
-### 0.0.1
-- Initial release
-- DeepSeek AI integration
-- Code generation
-- Linting support
-- Version control features
-
-## License
-
-[Add your license here]
+[MIT License / MIT 许可证]
 
 ---
 
-**Made with ❤️ by ITForce Team**
+**Made with ❤️ by ITForce Team / 由 ITForce 团队用 ❤️ 制作**
 
 

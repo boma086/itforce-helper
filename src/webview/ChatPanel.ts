@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
+import { AIService } from '../services/aiService';
 
 export class ChatPanel {
-    public static currentPanel: ChatPanel | undefined;
+    private static currentPanel: ChatPanel | undefined;
     private readonly _panel: vscode.WebviewPanel;
     private _disposables: vscode.Disposable[] = [];
 
@@ -53,8 +54,13 @@ export class ChatPanel {
     }
 
     private async _handleAIRequest(prompt: string, model: string): Promise<string> {
-        // 复用现有的 AI 调用逻辑
-        return await callAI(model, prompt);
+        try {
+            const aiService = AIService.getInstance();
+            return await aiService.generateResponse(model, prompt);
+        } catch (error) {
+            console.error('AI request error:', error);
+            throw error;
+        }
     }
 
     private _getWebviewContent() {

@@ -179,6 +179,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                         display: flex;
                         gap: 8px;
                         margin-top: 8px;
+                        padding-right: 0;  /* 移除右侧内边距 */
                     }
 
                     #messageInput {
@@ -194,10 +195,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     }
 
                     #modelSelect {
+                        flex: 1;  /* 让选择框占据所有剩余空间 */
                         padding: 4px 8px;
                         background: var(--vscode-dropdown-background);
                         color: var(--vscode-dropdown-foreground);
                         border: 1px solid var(--vscode-dropdown-border);
+                        margin-right: 0;  /* 移除右侧外边距 */
                     }
 
                     #sendButton {
@@ -206,6 +209,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                         color: var(--vscode-button-foreground);
                         border: none;
                         cursor: pointer;
+                        white-space: nowrap;  /* 防止按钮文字换行 */
                     }
 
                     #sendButton:disabled {
@@ -239,8 +243,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     <textarea id="messageInput" placeholder="Type your message here..."></textarea>
                     <div class="input-row">
                         <select id="modelSelect">
-                            <option value="DeepSeek AI">DeepSeek AI</option>
-                            <option value="Claude">Claude</option>
+                            <optgroup label="DeepSeek Models">
+                                <option value="deepseek-chat">DeepSeek Chat - 通用对话</option>
+                                <option value="deepseek-coder">DeepSeek Coder - 代码优化</option>
+                                <option value="deepseek-reasoner">DeepSeek Reasoner 推理</option>
+                            </optgroup>
+                            <optgroup label="Coming Soon">
+                                <option value="claude" disabled>Claude (即将推出)</option>
+                            </optgroup>
                         </select>
                         <button id="sendButton" onclick="sendMessage()">Send</button>
                     </div>
@@ -289,7 +299,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                             messageDiv.classList.add('thinking');
                             messageDiv.textContent = text;
                         } else if (type === 'ai') {
-                            // 渲染 Markdown
+                            // AI 消息保持原样
                             messageDiv.innerHTML = marked.parse(text);
                             
                             // 为代码块添加复制按钮
@@ -312,7 +322,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                                 wrapper.appendChild(copyButton);
                             });
                         } else {
-                            messageDiv.textContent = text;
+                            // 用户消息使用 pre 标签包装，保持格式
+                            const preElement = document.createElement('pre');
+                            preElement.style.margin = '0';
+                            preElement.style.whiteSpace = 'pre-wrap';
+                            preElement.textContent = text;
+                            messageDiv.appendChild(preElement);
                         }
                         
                         chatContainer.appendChild(messageDiv);

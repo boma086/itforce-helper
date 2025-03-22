@@ -32,15 +32,17 @@ export class AIService {
         return AIService.instance;
     }
 
-    public async generateResponse(model: string, prompt: string): Promise<string> {
+    public async generateResponse(model: string, prompt: string, options?: any): Promise<string> {
         try {
             console.log('Generating response for model:', model); // 添加调试日志
             
             switch (model) {
-                case 'DeepSeek AI':
-                    return await this.deepseekAdapter.generateResponse(prompt);
+                case 'deepseek-chat':
+                case 'deepseek-coder':
+                case 'deepseek-reasoner':
+                    return await this.deepseekAdapter.generateResponse(model, prompt);
                 case 'Claude':
-                    return await this.claudeAdapter.generateResponse(prompt);
+                    return await this.claudeAdapter.generateResponse('claude', prompt);
                 default:
                     throw new Error(`Unsupported model: ${model}`);
             }

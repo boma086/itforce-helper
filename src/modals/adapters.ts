@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import fetch from 'node-fetch';
 
 export interface AIAdapter {
-    generateResponse(prompt: string): Promise<string>;
+    generateResponse(model:string, prompt: string): Promise<string>;
 }
 
 export class DeepSeekAdapter implements AIAdapter {
@@ -13,7 +13,7 @@ export class DeepSeekAdapter implements AIAdapter {
         }
     }
 
-    async generateResponse(prompt: string): Promise<string> {
+    async generateResponse(model: string, prompt: string): Promise<string> {
         try {
             // 验证 API 密钥
             if (!this.apiKey) {
@@ -21,7 +21,8 @@ export class DeepSeekAdapter implements AIAdapter {
             }
 
             console.log('Sending request to DeepSeek API:', this.apiUrl);
-            
+            console.log('Sending request to DeepSeek API:', model);
+
             const response = await fetch(this.apiUrl, {
                 method: 'POST',
                 headers: {
@@ -29,7 +30,7 @@ export class DeepSeekAdapter implements AIAdapter {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    model: "deepseek-chat",
+                    model: model,
                     messages: [{ role: "user", content: prompt }]
                 })
             });
@@ -66,7 +67,7 @@ export class DeepSeekAdapter implements AIAdapter {
 export class ClaudeAdapter implements AIAdapter {
     constructor(private apiKey: string) {}
 
-    async generateResponse(prompt: string): Promise<string> {
+    async generateResponse(model: string, prompt: string): Promise<string> {
         try {
             const response = await fetch('https://api.anthropic.com/v1/messages', {
                 method: 'POST',
