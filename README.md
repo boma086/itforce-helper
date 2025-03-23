@@ -26,24 +26,9 @@ A powerful VS Code extension that enhances development workflow with AI assistan
 
 ## Configuration / 配置
 
-Configure the DeepSeek API key using one of these methods:
-通过以下方式之一配置 DeepSeek API 密钥：
-
-1. **VS Code Settings (Recommended) / VS Code 设置（推荐）**:
-   - Open VS Code settings (`Ctrl+,` or `Cmd+,`) / 打开 VS Code 设置
-   - Search for "ITForce" / 搜索 "ITForce"
-   - Add your DeepSeek API key in `itforceHelper.deepseekApiKey` / 在 `itforceHelper.deepseekApiKey` 中添加你的 API 密钥
-
-2. **Environment Variable / 环境变量**:
-   ```bash
-   # Windows
-   set DEEPSEEK_API_KEY=your-api-key-here
-
-   # Linux/Mac
-   export DEEPSEEK_API_KEY=your-api-key-here
-   ```
-
-> **Note/注意**: VS Code settings take precedence over environment variables. / VS Code 设置优先于环境变量。
+1. Copy `.env.example` to `.env`
+2. Add your DeepSeek API key to `.env`
+3. Never commit `.env` file to version control
 
 ## Usage / 使用方法
 

@@ -1,5 +1,12 @@
+# 已有的忽略项
 out
 dist
 node_modules
 .vscode-test/
 *.vsix
+
+# 添加以下内容
+.env
+.env.*
+*.env
+config/*.env
