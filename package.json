@@ -3,7 +3,7 @@
   "displayName": "ITForce Helper - AI Code Assistant / AI 代码助手",
   "description": "🤖 AI-powered code assistant (Requires DeepSeek API key). Configure via: 1) VS Code Settings (itforceHelper.deepseekApiKey) or 2) Environment Variable (DEEPSEEK_API_KEY). / AI 驱动的代码助手（需要 DeepSeek API 密钥）。配置方式：1) VS Code 设置 或 2) 环境变量。",
   "publisher": "bruce086",
-  "version": "0.0.7",
+  "version": "0.0.71",
   "categories": ["Programming Languages", "Snippets", "Other"],
   "keywords": [
     "deepseek",
