@@ -340,24 +340,34 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     }
 
                     let currentAiMessage = null;
+                    let currentMessageContent = '';  // 存储完整的消息内容
 
                     window.addEventListener('message', event => {
                         const message = event.data;
                         switch (message.command) {
                             case 'startResponse':
+                                currentMessageContent = '';  // 重置消息内容
                                 currentAiMessage = addMessageToChat('', 'ai');
                                 break;
                                 
                             case 'appendChunk':
                                 if (currentAiMessage) {
                                     const content = currentAiMessage.querySelector('.content') || currentAiMessage;
-                                    content.innerHTML += message.chunk;
+                                    // 累积消息内容
+                                    currentMessageContent += message.chunk;
+                                    // 重新渲染完整的消息
+                                    content.innerHTML = marked.parse(currentMessageContent);
+                                    // 处理代码块的语法高亮
+                                    content.querySelectorAll('pre code').forEach((block) => {
+                                        hljs.highlightElement(block);
+                                    });
                                     content.scrollIntoView({ behavior: 'smooth', block: 'end' });
                                 }
                                 break;
                                 
                             case 'completeResponse':
                                 currentAiMessage = null;
+                                currentMessageContent = '';  // 清理消息内容
                                 document.getElementById('sendButton').disabled = false;
                                 break;
                                 
@@ -365,6 +375,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                                 if (currentAiMessage) {
                                     currentAiMessage.remove();
                                 }
+                                currentMessageContent = '';  // 清理消息内容
                                 addMessageToChat(\`Error: \${message.error}\`, 'ai');
                                 document.getElementById('sendButton').disabled = false;
                                 break;
