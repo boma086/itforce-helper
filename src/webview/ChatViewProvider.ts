@@ -36,27 +36,31 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                         });
 
                         const aiService = AIService.getInstance();
-                        const response = await aiService.generateResponse(message.model, message.text);
                         
-                        // 发送AI响应
+                        // 创建初始消息
+                        webviewView.webview.postMessage({
+                            command: 'startResponse'
+                        });
+
+                        // 使用流式响应
+                        for await (const chunk of aiService.generateStreamResponse(message.model, message.text)) {
+                            webviewView.webview.postMessage({ 
+                                command: 'appendChunk',
+                                chunk: chunk
+                            });
+                        }
+                        
+                        // 发送完成状态
                         webviewView.webview.postMessage({ 
-                            command: 'receiveResponse',
-                            response: response,
+                            command: 'completeResponse',
                             status: 'complete'
                         });
                     } catch (error) {
-                        // 发送错误状态
                         webviewView.webview.postMessage({ 
                             command: 'receiveError',
                             error: error instanceof Error ? error.message : 'Unknown error',
                             status: 'error'
                         });
-                        
-                        if (error instanceof Error) {
-                            vscode.window.showErrorMessage(`Error: ${error.message}`);
-                        } else {
-                            vscode.window.showErrorMessage(`An unknown error occurred`);
-                        }
                     }
                     break;
             }
@@ -335,31 +339,34 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                         return messageDiv;
                     }
 
-                    let thinkingMessage = null;
+                    let currentAiMessage = null;
 
                     window.addEventListener('message', event => {
                         const message = event.data;
                         switch (message.command) {
-                            case 'updateStatus':
-                                if (message.status === 'thinking') {
-                                    thinkingMessage = addMessageToChat('AI is thinking...', 'ai', true);
+                            case 'startResponse':
+                                currentAiMessage = addMessageToChat('', 'ai');
+                                break;
+                                
+                            case 'appendChunk':
+                                if (currentAiMessage) {
+                                    const content = currentAiMessage.querySelector('.content') || currentAiMessage;
+                                    content.innerHTML += message.chunk;
+                                    content.scrollIntoView({ behavior: 'smooth', block: 'end' });
                                 }
                                 break;
-                            case 'receiveResponse':
-                                if (thinkingMessage) {
-                                    thinkingMessage.remove();
-                                    thinkingMessage = null;
-                                }
-                                addMessageToChat(message.response, 'ai');
-                                sendButton.disabled = false;
+                                
+                            case 'completeResponse':
+                                currentAiMessage = null;
+                                document.getElementById('sendButton').disabled = false;
                                 break;
+                                
                             case 'receiveError':
-                                if (thinkingMessage) {
-                                    thinkingMessage.remove();
-                                    thinkingMessage = null;
+                                if (currentAiMessage) {
+                                    currentAiMessage.remove();
                                 }
-                                addMessageToChat(\`Error: \${message.error}\`, 'error');
-                                sendButton.disabled = false;
+                                addMessageToChat(\`Error: \${message.error}\`, 'ai');
+                                document.getElementById('sendButton').disabled = false;
                                 break;
                         }
                     });
