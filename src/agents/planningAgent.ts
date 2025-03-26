@@ -33,7 +33,7 @@ export class PlanningAgent {
             2. 终端命令执行序列
             3. 代码变更描述
         `;
-        return this.model.generateResponse(planPrompt);
+        return this.model.generateResponse('deepseek-chat', planPrompt); // 添加模型参数
     }
 
     private parsePlan(plan: string): PlanStep[] {

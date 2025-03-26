@@ -23,7 +23,7 @@ suite('ITForce Helper Test Suite', () => {
     test('DeepSeek Adapter Test', async () => {
         const adapter = new DeepSeekAdapter('test-key', 'test-url');
         try {
-            await adapter.generateResponse('test prompt');
+            await adapter.generateResponse('deepseek-chat', 'test prompt'); // 添加模型参数
             assert.fail('Should throw error with invalid API key');
         } catch (error) {
             assert.ok(error instanceof Error);

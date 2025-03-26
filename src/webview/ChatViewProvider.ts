@@ -347,12 +347,16 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                         switch (message.command) {
                             case 'startResponse':
                                 currentMessageContent = '';  // 重置消息内容
-                                currentAiMessage = addMessageToChat('', 'ai');
+                                currentAiMessage = addMessageToChat('AI is thinking...', 'ai');
                                 break;
                                 
                             case 'appendChunk':
                                 if (currentAiMessage) {
                                     const content = currentAiMessage.querySelector('.content') || currentAiMessage;
+                                    // 如果是第一个响应块，清除"AI is thinking..."
+                                    if (!currentMessageContent) {
+                                        content.innerHTML = '';
+                                    }
                                     // 累积消息内容
                                     currentMessageContent += message.chunk;
                                     // 重新渲染完整的消息
