@@ -51,4 +51,23 @@ export class AIService {
             throw error;
         }
     }
+
+    public async* generateStreamResponse(model: string, prompt: string): AsyncGenerator<string> {
+        try {
+            console.log('Generating stream response for model:', model);
+            
+            switch (model) {
+                case 'deepseek-chat':
+                case 'deepseek-coder':
+                case 'deepseek-reasoner':
+                    yield* this.deepseekAdapter.generateStreamResponse(model, prompt);
+                    break;
+                default:
+                    throw new Error(`Unsupported model: ${model}`);
+            }
+        } catch (error) {
+            console.error('AI Service error:', error);
+            throw error;
+        }
+    }
 }
