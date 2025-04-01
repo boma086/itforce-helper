@@ -63,6 +63,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                         });
                     }
                     break;
+                case 'feedback':
+                    // 处理反馈
+                    console.log(`Received ${message.type} feedback for message:`, message.message);
+                    // 这里可以添加将反馈发送到服务器的逻辑
+                    break;
             }
         });
     }
@@ -238,6 +243,58 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     .chat-container::-webkit-scrollbar-thumb:hover {
                         background: var(--vscode-scrollbarSlider-hoverBackground);
                     }
+
+                    .message-actions {
+                        display: flex;
+                        gap: 8px;
+                        margin-top: 8px;
+                        align-items: center;
+                    }
+
+                    .action-button {
+                        background: none;
+                        border: none;
+                        cursor: pointer;
+                        padding: 4px;
+                        display: flex;
+                        align-items: center;
+                        color: var(--vscode-foreground);
+                        opacity: 0.7;
+                        transition: opacity 0.2s;
+                    }
+
+                    .action-button:hover {
+                        opacity: 1;
+                    }
+
+                    .retry-dropdown {
+                        position: relative;
+                        display: inline-block;
+                    }
+
+                    .retry-menu {
+                        display: none;
+                        position: absolute;
+                        background: var(--vscode-dropdown-background);
+                        border: 1px solid var(--vscode-dropdown-border);
+                        border-radius: 4px;
+                        padding: 4px 0;
+                        z-index: 1000;
+                        min-width: 150px;
+                    }
+
+                    .retry-menu.show {
+                        display: block;
+                    }
+
+                    .retry-menu-item {
+                        padding: 4px 12px;
+                        cursor: pointer;
+                    }
+
+                    .retry-menu-item:hover {
+                        background: var(--vscode-list-hoverBackground);
+                    }
                 </style>
             </head>
             <body>
@@ -302,41 +359,88 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                         if (isThinking) {
                             messageDiv.classList.add('thinking');
                             messageDiv.textContent = text;
-                        } else if (type === 'ai') {
-                            // AI 消息保持原样
-                            messageDiv.innerHTML = marked.parse(text);
-                            
-                            // 为代码块添加复制按钮
-                            messageDiv.querySelectorAll('pre code').forEach((block) => {
-                                const wrapper = document.createElement('div');
-                                wrapper.className = 'code-block-wrapper';
-                                const copyButton = document.createElement('button');
-                                copyButton.className = 'copy-button';
-                                copyButton.textContent = 'Copy';
-                                copyButton.onclick = () => {
-                                    navigator.clipboard.writeText(block.textContent);
-                                    copyButton.textContent = 'Copied!';
-                                    setTimeout(() => {
-                                        copyButton.textContent = 'Copy';
-                                    }, 2000);
-                                };
-                                
-                                block.parentNode.parentNode.insertBefore(wrapper, block.parentNode);
-                                wrapper.appendChild(block.parentNode);
-                                wrapper.appendChild(copyButton);
-                            });
                         } else {
-                            // 用户消息使用 pre 标签包装，保持格式
-                            const preElement = document.createElement('pre');
-                            preElement.style.margin = '0';
-                            preElement.style.whiteSpace = 'pre-wrap';
-                            preElement.textContent = text;
-                            messageDiv.appendChild(preElement);
+                            // 添加消息内容
+                            const contentDiv = document.createElement('div');
+                            contentDiv.className = 'message-content';
+                            if (type === 'ai') {
+                                contentDiv.innerHTML = marked.parse(text);
+                            } else {
+                                const preElement = document.createElement('pre');
+                                preElement.style.margin = '0';
+                                preElement.style.whiteSpace = 'pre-wrap';
+                                preElement.textContent = text;
+                                contentDiv.appendChild(preElement);
+                            }
+                            messageDiv.appendChild(contentDiv);
                         }
                         
                         chatContainer.appendChild(messageDiv);
                         chatContainer.scrollTop = chatContainer.scrollHeight;
                         return messageDiv;
+                    }
+
+                    // 添加操作按钮的函数
+                    function addActionButtons(messageDiv) {
+                        const actionsDiv = document.createElement('div');
+                        actionsDiv.className = 'message-actions';
+                        
+                        // 重试按钮和下拉菜单
+                        const retryDropdown = document.createElement('div');
+                        retryDropdown.className = 'retry-dropdown';
+                        
+                        const retryButton = document.createElement('button');
+                        retryButton.className = 'action-button';
+                        retryButton.innerHTML = '🔄 Retry';
+                        retryButton.onclick = (e) => {
+                            e.stopPropagation();
+                            const menu = retryDropdown.querySelector('.retry-menu');
+                            menu.classList.toggle('show');
+                        };
+                        
+                        const retryMenu = document.createElement('div');
+                        retryMenu.className = 'retry-menu';
+                        
+                        // 获取当前选择的模型
+                        const currentModel = document.getElementById('modelSelect').value;
+                        
+                        // 添加所有模型选项
+                        const models = [
+                            { value: 'deepseek-chat', label: 'DeepSeek Chat' },
+                            { value: 'deepseek-coder', label: 'DeepSeek Coder' },
+                            { value: 'deepseek-reasoner', label: 'DeepSeek Reasoner' }
+                        ];
+                        
+                        models.forEach(model => {
+                            const menuItem = document.createElement('div');
+                            menuItem.className = 'retry-menu-item';
+                            menuItem.textContent = model.label;
+                            menuItem.onclick = () => {
+                                retryMessage(messageDiv, model.value);
+                                retryMenu.classList.remove('show');
+                            };
+                            retryMenu.appendChild(menuItem);
+                        });
+                        
+                        retryDropdown.appendChild(retryButton);
+                        retryDropdown.appendChild(retryMenu);
+                        
+                        // 点赞按钮
+                        const likeButton = document.createElement('button');
+                        likeButton.className = 'action-button';
+                        likeButton.innerHTML = '👍';
+                        likeButton.onclick = () => handleFeedback(messageDiv, 'like');
+                        
+                        // 踩按钮
+                        const dislikeButton = document.createElement('button');
+                        dislikeButton.className = 'action-button';
+                        dislikeButton.innerHTML = '👎';
+                        dislikeButton.onclick = () => handleFeedback(messageDiv, 'dislike');
+                        
+                        actionsDiv.appendChild(retryDropdown);
+                        actionsDiv.appendChild(likeButton);
+                        actionsDiv.appendChild(dislikeButton);
+                        messageDiv.appendChild(actionsDiv);
                     }
 
                     let currentAiMessage = null;
@@ -347,29 +451,55 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                         switch (message.command) {
                             case 'startResponse':
                                 currentMessageContent = '';  // 重置消息内容
-                                currentAiMessage = addMessageToChat('AI is thinking...', 'ai');
+                                currentAiMessage = addMessageToChat('AI is thinking...', 'ai', true);
                                 break;
                                 
                             case 'appendChunk':
                                 if (currentAiMessage) {
-                                    const content = currentAiMessage.querySelector('.content') || currentAiMessage;
+                                    const content = currentAiMessage.querySelector('.message-content') || currentAiMessage;
                                     // 如果是第一个响应块，清除"AI is thinking..."
                                     if (!currentMessageContent) {
+                                        currentAiMessage.classList.remove('thinking');
                                         content.innerHTML = '';
                                     }
                                     // 累积消息内容
                                     currentMessageContent += message.chunk;
                                     // 重新渲染完整的消息
                                     content.innerHTML = marked.parse(currentMessageContent);
-                                    // 处理代码块的语法高亮
+                                    // 处理代码块的语法高亮和添加复制按钮
                                     content.querySelectorAll('pre code').forEach((block) => {
                                         hljs.highlightElement(block);
+                                        if (!block.parentElement.parentElement.classList.contains('code-block-wrapper')) {
+                                            const wrapper = document.createElement('div');
+                                            wrapper.className = 'code-block-wrapper';
+                                            const copyButton = document.createElement('button');
+                                            copyButton.className = 'copy-button';
+                                            copyButton.textContent = 'Copy';
+                                            copyButton.onclick = async () => {
+                                                try {
+                                                    await navigator.clipboard.writeText(block.textContent || '');
+                                                    copyButton.textContent = 'Copied!';
+                                                    setTimeout(() => {
+                                                        copyButton.textContent = 'Copy';
+                                                    }, 2000);
+                                                } catch (err) {
+                                                    console.error('Failed to copy:', err);
+                                                }
+                                            };
+                                            block.parentElement.parentNode.insertBefore(wrapper, block.parentElement);
+                                            wrapper.appendChild(block.parentElement);
+                                            wrapper.insertBefore(copyButton, block.parentElement);
+                                        }
                                     });
                                     content.scrollIntoView({ behavior: 'smooth', block: 'end' });
                                 }
                                 break;
                                 
                             case 'completeResponse':
+                                if (currentAiMessage) {
+                                    // 在响应完成时添加操作按钮
+                                    addActionButtons(currentAiMessage);
+                                }
                                 currentAiMessage = null;
                                 currentMessageContent = '';  // 清理消息内容
                                 document.getElementById('sendButton').disabled = false;
@@ -392,6 +522,50 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                             e.preventDefault();
                             sendMessage();
                         }
+                    });
+
+                    // 重试消息
+                    async function retryMessage(messageDiv, selectedModel) {
+                        // 获取原始问题文本
+                        const questionDiv = messageDiv.previousElementSibling;
+                        if (!questionDiv || !questionDiv.classList.contains('user-message')) {
+                            return;
+                        }
+                        
+                        const questionText = questionDiv.querySelector('pre')?.textContent || '';
+                        
+                        // 发送消息
+                        vscode.postMessage({
+                            command: 'sendMessage',
+                            text: questionText,
+                            model: selectedModel
+                        });
+                    }
+
+                    // 处理反馈
+                    function handleFeedback(messageDiv, type) {
+                        const button = type === 'like' ? '👍' : '👎';
+                        vscode.postMessage({
+                            command: 'feedback',
+                            type: type,
+                            message: messageDiv.querySelector('.message-content').textContent
+                        });
+                        
+                        // 视觉反馈
+                        const feedbackButton = messageDiv.querySelector(\`button:contains(\${button})\`);
+                        if (feedbackButton) {
+                            feedbackButton.style.opacity = '1';
+                        }
+                    }
+
+                    // 点击页面任意位置关闭重试菜单
+                    document.addEventListener('click', (e) => {
+                        const menus = document.querySelectorAll('.retry-menu');
+                        menus.forEach(menu => {
+                            if (!menu.contains(e.target) && !e.target.closest('.retry-dropdown')) {
+                                menu.classList.remove('show');
+                            }
+                        });
                     });
                 </script>
             </body>

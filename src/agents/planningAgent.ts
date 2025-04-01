@@ -59,7 +59,7 @@ export class PlanningAgent {
     }
 
     private async applyCodeChanges(step: PlanStep): Promise<void> {
-        if (!step.path) return;
+        if (!step.path) {return;}
         
         // TODO: 实现文件修改逻辑
         console.log(`Applying changes to ${step.path}`);

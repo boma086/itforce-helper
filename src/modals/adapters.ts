@@ -43,7 +43,7 @@ export class DeepSeekAdapter implements AIAdapter {
                 for (const line of lines) {
                     if (line.startsWith('data: ')) {
                         const data = line.slice(6);
-                        if (data === '[DONE]') continue;
+                        if (data === '[DONE]') {continue;}
                         
                         try {
                             const parsed = JSON.parse(data);
