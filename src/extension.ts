@@ -16,11 +16,11 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('itforce-helper.generate', async () => {
             const aiService = AIService.getInstance();
-            
+
             // 获取用户输入
             const prompt = await vscode.window.showInputBox({
-                prompt: 'Enter your question or request',
-                placeHolder: 'What would you like to generate?'
+                prompt: '質問やリクエストを入力してください',
+                placeHolder: '何を生成しますか？'
             });
 
             if (!prompt) {
@@ -29,13 +29,13 @@ export function activate(context: vscode.ExtensionContext) {
 
             try {
                 const response = await aiService.generateResponse('DeepSeek AI', prompt);
-                
+
                 // 创建并显示输出通道
                 const outputChannel = vscode.window.createOutputChannel('ITForce Helper');
                 outputChannel.show();
                 outputChannel.appendLine(response);
             } catch (error) {
-                vscode.window.showErrorMessage(`Error: ${error}`);
+                vscode.window.showErrorMessage(`エラー: ${error}`);
             }
         })
     );

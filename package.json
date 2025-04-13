@@ -1,9 +1,9 @@
 {
   "name": "itforce-helper",
-  "displayName": "ITForce Helper - AI Code Assistant",
-  "description": "🤖 AI-powered code assistant (Requires DeepSeek API key). Configure via: 1) VS Code Settings (itforceHelper.deepseekApiKey) or 2) Environment Variable (DEEPSEEK_API_KEY) on Mac/Linux/Windows.",
+  "displayName": "ITForce Helper - AI コードアシスタント",
+  "description": "🤖 AI駆動のコードアシスタント（DeepSeek APIキーが必要）。設定方法: 1) VS Code設定 (itforceHelper.deepseekApiKey) または 2) 環境変数 (DEEPSEEK_API_KEY) Mac/Linux/Windows対応。",
   "publisher": "bruce086",
-  "version": "0.0.8330",
+  "version": "0.0.8410",
   "categories": ["Programming Languages", "Snippets", "Other"],
   "keywords": [
     "deepseek",
@@ -25,18 +25,18 @@
     "commands": [
       {
         "command": "itforce-helper.helloWorld",
-        "title": "ITForce: Hello World"
+        "title": "ITForce: こんにちは世界"
       },
       {
         "command": "itforce-helper.generate",
-        "title": "ITForce: Generate Code"
+        "title": "ITForce: コード生成"
       }
     ],
     "viewsContainers": {
       "activitybar": [
         {
           "id": "itforce-helper",
-          "title": "ITForce Helper",
+          "title": "ITForce ヘルパー",
           "icon": "resources/icon.svg"
         }
       ]
@@ -46,23 +46,23 @@
         {
           "type": "webview",
           "id": "itforce-helper.chatView",
-          "name": "ITForce Assistant"
+          "name": "ITForce アシスタント"
         }
       ]
     },
     "configuration": {
-      "title": "ITForce Helper",
+      "title": "ITForce ヘルパー",
       "properties": {
         "itforceHelper.deepseekApiKey": {
           "type": "string",
           "default": "",
-          "markdownDescription": "**Required**: DeepSeek API key. Without this, AI features won't work. Set here or via DEEPSEEK_API_KEY environment variable.",
+          "markdownDescription": "**必須**: DeepSeek APIキー。これがないとAI機能は動作しません。ここか、またはDEEPSEEK_API_KEY環境変数で設定してください。",
           "order": 1
         },
         "itforceHelper.deepseekApiUrl": {
           "type": "string",
           "default": "https://api.deepseek.com/v1/chat/completions",
-          "description": "API URL for DeepSeek AI"
+          "description": "DeepSeek AIのAPI URL"
         }
       }
     }

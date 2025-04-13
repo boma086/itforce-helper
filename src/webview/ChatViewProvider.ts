@@ -30,13 +30,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                 case 'sendMessage':
                     try {
                         // 发送"正在思考"状态
-                        webviewView.webview.postMessage({ 
+                        webviewView.webview.postMessage({
                             command: 'updateStatus',
                             status: 'thinking'
                         });
 
                         const aiService = AIService.getInstance();
-                        
+
                         // 创建初始消息
                         webviewView.webview.postMessage({
                             command: 'startResponse'
@@ -44,19 +44,19 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
                         // 使用流式响应
                         for await (const chunk of aiService.generateStreamResponse(message.model, message.text)) {
-                            webviewView.webview.postMessage({ 
+                            webviewView.webview.postMessage({
                                 command: 'appendChunk',
                                 chunk: chunk
                             });
                         }
-                        
+
                         // 发送完成状态
-                        webviewView.webview.postMessage({ 
+                        webviewView.webview.postMessage({
                             command: 'completeResponse',
                             status: 'complete'
                         });
                     } catch (error) {
-                        webviewView.webview.postMessage({ 
+                        webviewView.webview.postMessage({
                             command: 'receiveError',
                             error: error instanceof Error ? error.message : 'Unknown error',
                             status: 'error'
@@ -136,7 +136,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                         margin: 0.5em 0;
                     }
 
-                    .message.ai-message ul, 
+                    .message.ai-message ul,
                     .message.ai-message ol {
                         margin: 0.5em 0;
                         padding-left: 2em;
@@ -299,28 +299,28 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             </head>
             <body>
                 <div id="chatContainer" class="chat-container"></div>
-                
+
                 <div class="input-container">
-                    <textarea id="messageInput" placeholder="Type your message here..."></textarea>
+                    <textarea id="messageInput" placeholder="メッセージを入力してください..."></textarea>
                     <div class="input-row">
                         <select id="modelSelect">
-                            <optgroup label="DeepSeek Models">
-                                <option value="deepseek-chat">DeepSeek Chat - 通用对话</option>
-                                <option value="deepseek-coder">DeepSeek Coder - 代码优化</option>
-                                <option value="deepseek-reasoner">DeepSeek Reasoner 推理</option>
+                            <optgroup label="DeepSeek モデル">
+                                <option value="deepseek-chat">DeepSeek Chat - 一般会話</option>
+                                <option value="deepseek-coder">DeepSeek Coder - コード最適化</option>
+                                <option value="deepseek-reasoner">DeepSeek Reasoner 推論</option>
                             </optgroup>
-                            <optgroup label="Coming Soon">
-                                <option value="claude" disabled>Claude (即将推出)</option>
+                            <optgroup label="近日公開">
+                                <option value="claude" disabled>Claude (近日公開予定)</option>
                             </optgroup>
                         </select>
-                        <button id="sendButton" onclick="sendMessage()">Send</button>
+                        <button id="sendButton" onclick="sendMessage()">送信</button>
                     </div>
                 </div>
 
                 <script>
                     const vscode = acquireVsCodeApi();
                     const sendButton = document.getElementById('sendButton');
-                    
+
                     // 配置 marked
                     marked.setOptions({
                         highlight: function(code, lang) {
@@ -334,20 +334,20 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     function sendMessage() {
                         const text = document.getElementById('messageInput').value;
                         if (!text.trim()) return;
-                        
+
                         const model = document.getElementById('modelSelect').value;
-                        
+
                         // 禁用发送按钮
                         sendButton.disabled = true;
-                        
+
                         addMessageToChat(text, 'user');
-                        
+
                         vscode.postMessage({
                             command: 'sendMessage',
                             text: text,
                             model: model
                         });
-                        
+
                         document.getElementById('messageInput').value = '';
                     }
 
@@ -355,7 +355,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                         const chatContainer = document.getElementById('chatContainer');
                         const messageDiv = document.createElement('div');
                         messageDiv.className = \`message \${type}-message\`;
-                        
+
                         if (isThinking) {
                             messageDiv.classList.add('thinking');
                             messageDiv.textContent = text;
@@ -374,7 +374,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                             }
                             messageDiv.appendChild(contentDiv);
                         }
-                        
+
                         chatContainer.appendChild(messageDiv);
                         chatContainer.scrollTop = chatContainer.scrollHeight;
                         return messageDiv;
@@ -384,33 +384,33 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     function addActionButtons(messageDiv) {
                         const actionsDiv = document.createElement('div');
                         actionsDiv.className = 'message-actions';
-                        
+
                         // 重试按钮和下拉菜单
                         const retryDropdown = document.createElement('div');
                         retryDropdown.className = 'retry-dropdown';
-                        
+
                         const retryButton = document.createElement('button');
                         retryButton.className = 'action-button';
-                        retryButton.innerHTML = '🔄 Retry';
+                        retryButton.innerHTML = '🔄 再試行';
                         retryButton.onclick = (e) => {
                             e.stopPropagation();
                             const menu = retryDropdown.querySelector('.retry-menu');
                             menu.classList.toggle('show');
                         };
-                        
+
                         const retryMenu = document.createElement('div');
                         retryMenu.className = 'retry-menu';
-                        
+
                         // 获取当前选择的模型
                         const currentModel = document.getElementById('modelSelect').value;
-                        
+
                         // 添加所有模型选项
                         const models = [
                             { value: 'deepseek-chat', label: 'DeepSeek Chat' },
                             { value: 'deepseek-coder', label: 'DeepSeek Coder' },
                             { value: 'deepseek-reasoner', label: 'DeepSeek Reasoner' }
                         ];
-                        
+
                         models.forEach(model => {
                             const menuItem = document.createElement('div');
                             menuItem.className = 'retry-menu-item';
@@ -421,22 +421,22 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                             };
                             retryMenu.appendChild(menuItem);
                         });
-                        
+
                         retryDropdown.appendChild(retryButton);
                         retryDropdown.appendChild(retryMenu);
-                        
+
                         // 点赞按钮
                         const likeButton = document.createElement('button');
                         likeButton.className = 'action-button';
                         likeButton.innerHTML = '👍';
                         likeButton.onclick = () => handleFeedback(messageDiv, 'like');
-                        
+
                         // 踩按钮
                         const dislikeButton = document.createElement('button');
                         dislikeButton.className = 'action-button';
                         dislikeButton.innerHTML = '👎';
                         dislikeButton.onclick = () => handleFeedback(messageDiv, 'dislike');
-                        
+
                         actionsDiv.appendChild(retryDropdown);
                         actionsDiv.appendChild(likeButton);
                         actionsDiv.appendChild(dislikeButton);
@@ -451,9 +451,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                         switch (message.command) {
                             case 'startResponse':
                                 currentMessageContent = '';  // 重置消息内容
-                                currentAiMessage = addMessageToChat('AI is thinking...', 'ai', true);
+                                currentAiMessage = addMessageToChat('AIが考えています...', 'ai', true);
                                 break;
-                                
+
                             case 'appendChunk':
                                 if (currentAiMessage) {
                                     const content = currentAiMessage.querySelector('.message-content') || currentAiMessage;
@@ -474,13 +474,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                                             wrapper.className = 'code-block-wrapper';
                                             const copyButton = document.createElement('button');
                                             copyButton.className = 'copy-button';
-                                            copyButton.textContent = 'Copy';
+                                            copyButton.textContent = 'コピー';
                                             copyButton.onclick = async () => {
                                                 try {
                                                     await navigator.clipboard.writeText(block.textContent || '');
-                                                    copyButton.textContent = 'Copied!';
+                                                    copyButton.textContent = 'コピー完了！';
                                                     setTimeout(() => {
-                                                        copyButton.textContent = 'Copy';
+                                                        copyButton.textContent = 'コピー';
                                                     }, 2000);
                                                 } catch (err) {
                                                     console.error('Failed to copy:', err);
@@ -494,7 +494,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                                     content.scrollIntoView({ behavior: 'smooth', block: 'end' });
                                 }
                                 break;
-                                
+
                             case 'completeResponse':
                                 if (currentAiMessage) {
                                     // 在响应完成时添加操作按钮
@@ -504,13 +504,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                                 currentMessageContent = '';  // 清理消息内容
                                 document.getElementById('sendButton').disabled = false;
                                 break;
-                                
+
                             case 'receiveError':
                                 if (currentAiMessage) {
                                     currentAiMessage.remove();
                                 }
                                 currentMessageContent = '';  // 清理消息内容
-                                addMessageToChat(\`Error: \${message.error}\`, 'ai');
+                                addMessageToChat(\`エラー: \${message.error}\`, 'ai');
                                 document.getElementById('sendButton').disabled = false;
                                 break;
                         }
@@ -531,9 +531,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                         if (!questionDiv || !questionDiv.classList.contains('user-message')) {
                             return;
                         }
-                        
+
                         const questionText = questionDiv.querySelector('pre')?.textContent || '';
-                        
+
                         // 发送消息
                         vscode.postMessage({
                             command: 'sendMessage',
@@ -550,7 +550,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                             type: type,
                             message: messageDiv.querySelector('.message-content').textContent
                         });
-                        
+
                         // 视觉反馈
                         const feedbackButton = messageDiv.querySelector(\`button:contains(\${button})\`);
                         if (feedbackButton) {
