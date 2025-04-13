@@ -3,7 +3,7 @@
   "displayName": "ITForce Helper - AI コードアシスタント",
   "description": "🤖 AI駆動のコードアシスタント（DeepSeek APIキーが必要）。設定方法: 1) VS Code設定 (itforceHelper.deepseekApiKey) または 2) 環境変数 (DEEPSEEK_API_KEY) Mac/Linux/Windows対応。",
   "publisher": "bruce086",
-  "version": "0.0.8410",
+  "version": "0.0.8411",
   "categories": ["Programming Languages", "Snippets", "Other"],
   "keywords": [
     "deepseek",
