@@ -27,7 +27,10 @@ export class DeepSeekAdapter implements AIAdapter {
                 body: JSON.stringify({
                     model: model,
                     messages: [{ role: "user", content: prompt }],
-                    stream: true
+                    stream: true,
+                    temperature: 0.1,  // 低温度，更严格遵循指令
+                    max_tokens: 8000,  // 增加到8K tokens，适合复杂流程图生成
+                    top_p: 0.9
                 })
             });
 
@@ -44,7 +47,7 @@ export class DeepSeekAdapter implements AIAdapter {
                     if (line.startsWith('data: ')) {
                         const data = line.slice(6);
                         if (data === '[DONE]') {continue;}
-                        
+
                         try {
                             const parsed = JSON.parse(data);
                             if (parsed.choices[0]?.delta?.content) {
@@ -74,7 +77,10 @@ export class DeepSeekAdapter implements AIAdapter {
                 body: JSON.stringify({
                     model: model,
                     messages: [{ role: "user", content: prompt }],
-                    stream: false
+                    stream: false,
+                    temperature: 0.1,  // 低温度，更严格遵循指令
+                    max_tokens: 8000,  // 增加到8K tokens，适合复杂流程图生成
+                    top_p: 0.9
                 })
             });
 
@@ -104,9 +110,9 @@ export class ClaudeAdapter implements AIAdapter {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    model: "claude-2",
+                    model: "claude-3-5-sonnet-20241022",  // 更新到最新的Claude模型
                     messages: [{ role: "user", content: prompt }],
-                    max_tokens: 4000
+                    max_tokens: 8000  // 增加到8K tokens
                 })
             });
 

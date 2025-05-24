@@ -1,89 +1,122 @@
-# ITForce Helper
+# ITForce Helper - Java フローチャート生成
 
-[![English](https://img.shields.io/badge/Language-English-blue.svg)](./README.md)
-[![简体中文](https://img.shields.io/badge/语言-简体中文-red.svg)](./README.zh-CN.md)
-[![日本語](https://img.shields.io/badge/言語-日本語-green.svg)](./README.ja-JP.md)
+🚀 **Javaコードから美しいフローチャートを自動生成**
 
-A powerful VS Code extension that enhances development workflow with AI assistance and code quality tools.
+AI駆動のシンプルで高速なコード可視化ツール。複雑なJavaコードを直感的なフローチャートに変換し、コードの理解と文書化を支援します。
 
-## Prerequisites
+## ✨ 主な機能
 
-### DeepSeek API Key Configuration
+- 🎯 **ワンクリック生成**: Javaコードを貼り付けて「生成流程图」と入力するだけ
+- 🎨 **美しいビジュアル**: Mermaid.js による高品質なフローチャート
+- ⚡ **高速処理**: 数秒でコードを解析してフローチャートを生成
+- 🤖 **AI駆動**: DeepSeek API または Ollama ローカルモデル対応
+- 🌐 **多言語対応**: 日本語、英語、中国語のインターフェース
 
-Choose one of the following methods:
+## 🚀 クイックスタート
 
-1. **VS Code Settings**
-   - Open VS Code Settings
-   - Search "itforceHelper.deepseekApiKey"
-   - Enter your API key
+### 1. インストール
+VS Code の拡張機能マーケットプレイスから「ITForce Helper」をインストール
 
-2. **Environment Variable**
-   
-   **For MacOS/Linux:**
-   ```bash
-   export DEEPSEEK_API_KEY=sk-xxxxxxxxxxxxxxxx
-   ```
-   Add to `~/.bashrc` or `~/.zshrc` for permanent setting
+### 2. API キー設定
+以下のいずれかの方法で DeepSeek API キーを設定：
 
-   **For Windows:**
-   ```cmd
-   # CMD
-   set DEEPSEEK_API_KEY=sk-xxxxxxxxxxxxxxxx
+**方法A: VS Code 設定**
+```json
+{
+  "itforceHelper.deepseekApiKey": "your-api-key-here"
+}
+```
 
-   # PowerShell
-   $env:DEEPSEEK_API_KEY="sk-xxxxxxxxxxxxxxxx"
-   ```
-   Or set via System Properties > Environment Variables for permanent setting
+**方法B: 環境変数**
+```bash
+export DEEPSEEK_API_KEY="your-api-key-here"
+```
 
-## Key Features
+### 3. 使用開始
+1. サイドバーの ITForce ヘルパーアイコンをクリック
+2. Javaコードを貼り付け
+3. 「生成流程图」と入力
+4. 美しいフローチャートが新しいパネルに表示されます！
 
-🤖 **AI-Powered Development**
-- Code generation using DeepSeek AI
-- Smart development planning and suggestions
-- Built-in AI chat interface
+## 📖 使用例
 
-🛠️ **Code Quality**
-- Real-time code validation
-- Automatic code fixes
-- TypeScript type checking
+### 入力例
+```java
+@Component
+public class BCryptProvider implements HashProvider {
+  @Override
+  public String hashPassword(String plainPassword) {
+    return BCrypt.hashpw(plainPassword, BCrypt.gensalt());
+  }
 
-🔄 **Version Management**
-- Smart code checkpoint system
-- Quick checkpoint creation/restoration
+  @Override
+  public boolean isPasswordValid(String plainText, String hashed) {
+    return BCrypt.checkpw(plainText, hashed);
+  }
+}
+```
 
-## Installation
+### 出力
+美しいMermaidフローチャートが自動生成され、メソッドの流れと関係性が視覚化されます。
 
-1. Install from VS Code Marketplace
-2. Configure DeepSeek API key (required)
+## ⚙️ 設定オプション
 
-## Usage
+| 設定項目 | デフォルト値 | 説明 |
+|---------|-------------|------|
+| `itforceHelper.deepseekApiKey` | - | **必須**: DeepSeek API キー |
+| `itforceHelper.deepseekApiUrl` | `https://api.deepseek.com/v1/chat/completions` | DeepSeek API URL |
+| `itforceHelper.ollamaUrl` | `http://localhost:11434` | Ollama サーバー URL |
+| `itforceHelper.ollamaModel` | `codellama:latest` | 使用する Ollama モデル |
 
-### Commands
-- `ITForce: Generate Code` - AI-powered code generation
-- `ITForce: Hello World` - Test extension setup
+## 🛠️ 開発者向け
 
-### Settings
-- `itforceHelper.deepseekApiKey`: DeepSeek API key
-- `itforceHelper.deepseekApiUrl`: Custom API URL (optional)
+### ローカル開発
+```bash
+# 依存関係のインストール
+npm install
 
-## Development
+# コンパイル
+npm run compile
 
-### Prerequisites
-- VS Code ^1.98.0
-- Node.js
-- npm
+# 開発モード（ウォッチ）
+npm run watch
 
-### Setup
-1. Clone repository
-2. Install dependencies: `npm install`
-3. Run `npm run watch` for development
+# テスト実行
+npm test
+```
 
-## License
+### プロジェクト構造
+```
+src/
+├── extension.ts              # 拡張機能エントリーポイント
+├── services/
+│   ├── aiService.ts         # AI サービス統合
+│   └── flowchartGenerator.ts # フローチャート生成
+├── webview/
+│   └── ChatViewProvider.ts  # チャット UI とフローチャート表示
+└── utils/
+    └── codeExtractor.ts     # コード抽出ユーティリティ
+```
 
-[MIT License]
+## 📋 システム要件
+
+- VS Code 1.98.0 以上
+- インターネット接続（DeepSeek API 使用時）
+- Node.js 20.x 以上（開発時）
+
+## 🤝 コントリビューション
+
+プルリクエストやイシューの報告を歓迎します！
+
+## 📄 ライセンス
+
+MIT License
+
+## 🔗 リンク
+
+- [GitHub Repository](https://github.com/boma086/itforce-helper)
+- [DeepSeek API](https://platform.deepseek.com/)
 
 ---
 
 **Made with ❤️ by ITForce Team**
-
-

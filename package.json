@@ -1,10 +1,15 @@
 {
   "name": "itforce-helper",
-  "displayName": "ITForce Helper - AI コードアシスタント",
-  "description": "🤖 AI駆動のコードアシスタント（DeepSeek APIキーが必要）。設定方法: 1) VS Code設定 (itforceHelper.deepseekApiKey) または 2) 環境変数 (DEEPSEEK_API_KEY) Mac/Linux/Windows対応。",
+  "displayName": "ITForce Helper - Java フローチャート生成",
+  "description": "🚀 Javaコードから美しいフローチャートを自動生成。AI駆動のシンプルで高速なコード可視化ツール。DeepSeek API または Ollama 対応。",
   "publisher": "bruce086",
-  "version": "0.0.8411",
-  "categories": ["Programming Languages", "Snippets", "Other"],
+  "version": "0.0.852502",
+  "license": "MIT",
+  "categories": [
+    "Programming Languages",
+    "Snippets",
+    "Other"
+  ],
   "keywords": [
     "deepseek",
     "ai assistant",
@@ -16,22 +21,36 @@
     "vscode": "^1.98.0"
   },
   "activationEvents": [
-    "onCommand:itforce-helper.helloWorld",
-    "onCommand:itforce-helper.generate",
     "onStartupFinished"
   ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "itforce-helper.helloWorld",
-        "title": "ITForce: こんにちは世界"
+        "command": "itforce-helper.openChat",
+        "title": "ITForce: チャットを開く"
       },
       {
-        "command": "itforce-helper.generate",
-        "title": "ITForce: コード生成"
+        "command": "itforce-helper.generateFlowchart",
+        "title": "🔄 フローチャート生成"
       }
     ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "resourceExtname == .java",
+          "command": "itforce-helper.generateFlowchart",
+          "group": "itforce"
+        }
+      ],
+      "explorer/context": [
+        {
+          "when": "resourceExtname == .java",
+          "command": "itforce-helper.generateFlowchart",
+          "group": "itforce"
+        }
+      ]
+    },
     "viewsContainers": {
       "activitybar": [
         {
@@ -63,6 +82,21 @@
           "type": "string",
           "default": "https://api.deepseek.com/v1/chat/completions",
           "description": "DeepSeek AIのAPI URL"
+        },
+        "itforceHelper.ollamaUrl": {
+          "type": "string",
+          "default": "http://localhost:11434",
+          "description": "OllamaサーバーのURL"
+        },
+        "itforceHelper.defaultOllamaModel": {
+          "type": "string",
+          "default": "",
+          "description": "デフォルトで使用するOllamaモデル"
+        },
+        "itforceHelper.ollamaModel": {
+          "type": "string",
+          "default": "codellama:latest",
+          "description": "使用するOllamaモデル名"
         }
       }
     }
@@ -79,7 +113,9 @@
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
     "check-types": "tsc --noEmit",
     "lint": "eslint src",
-    "test": "@vscode/test-electron ."
+    "test": "@vscode/test-electron .",
+    "vsce:package": "vsce package",
+    "vsce:publish": "vsce publish"
   },
   "dependencies": {
     "node-fetch": "^2.6.12"
