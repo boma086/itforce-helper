@@ -1,8 +1,8 @@
-import * as vscode from 'vscode';
 import fetch from 'node-fetch';
 
 export interface AIAdapter {
     generateResponse(model:string, prompt: string): Promise<string>;
+    getAvailableModels?(): Promise<string[]>;
 }
 
 export class DeepSeekAdapter implements AIAdapter {
@@ -95,6 +95,55 @@ export class DeepSeekAdapter implements AIAdapter {
             throw error;
         }
     }
+
+    /**
+     * 获取可用的云端模型列表
+     */
+    async getAvailableModels(): Promise<string[]> {
+        try {
+            if (!this.apiKey) {
+                console.warn('Cloud API key is not configured, returning empty models list');
+                return [];
+            }
+
+            // 构建models端点URL
+            const modelsUrl = this.apiUrl.replace('/chat/completions', '/models');
+
+            const response = await fetch(modelsUrl, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${this.apiKey}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                console.warn(`Failed to fetch models from API: ${response.status} ${response.statusText}`);
+                // API连接失败时返回空数组，不返回默认模型
+                return [];
+            }
+
+            const data = await response.json() as any;
+
+            if (data && data.data && Array.isArray(data.data)) {
+                const models = data.data
+                    .map((model: any) => model.id || model.name)
+                    .filter((id: string) => id && typeof id === 'string');
+
+                console.log('Available cloud models:', models);
+                return models;
+            }
+
+            // 如果API响应格式不符合预期，返回空数组
+            console.warn('Unexpected API response format, returning empty models list');
+            return [];
+
+        } catch (error) {
+            console.error('Failed to fetch cloud models:', error);
+            // 连接失败时返回空数组，不返回默认模型
+            return [];
+        }
+    }
 }
 
 export class ClaudeAdapter implements AIAdapter {
@@ -110,7 +159,7 @@ export class ClaudeAdapter implements AIAdapter {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    model: "claude-3-5-sonnet-20241022",  // 更新到最新的Claude模型
+                    model: model || "claude-3-5-sonnet-20241022",  // 使用传入的模型或默认模型
                     messages: [{ role: "user", content: prompt }],
                     max_tokens: 8000  // 增加到8K tokens
                 })
@@ -125,6 +174,27 @@ export class ClaudeAdapter implements AIAdapter {
         } catch (error) {
             console.error('Claude API error:', error);
             throw new Error('Failed to generate response from Claude');
+        }
+    }
+
+    /**
+     * 获取可用的Claude模型列表
+     * 注意：Anthropic API目前不提供公开的模型列表端点，所以返回已知的模型
+     */
+    async getAvailableModels(): Promise<string[]> {
+        try {
+            // Claude API目前不提供公开的模型列表端点
+            // 返回已知的可用模型列表
+            return [
+                'claude-3-5-sonnet-20241022',
+                'claude-3-5-haiku-20241022',
+                'claude-3-opus-20240229',
+                'claude-3-sonnet-20240229',
+                'claude-3-haiku-20240307'
+            ];
+        } catch (error) {
+            console.error('Failed to get Claude models:', error);
+            return ['claude-3-5-sonnet-20241022'];
         }
     }
 }

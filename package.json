@@ -1,9 +1,9 @@
 {
   "name": "itforce-helper",
-  "displayName": "ITForce Helper - Java フローチャート生成",
-  "description": "🚀 Javaコードから美しいフローチャートを自動生成。AI駆動のシンプルで高速なコード可視化ツール。DeepSeek API または Ollama 対応。",
+  "displayName": "ITForce Helper - AI-Powered Code Visualization",
+  "description": "🚀 Generate beautiful flowcharts from Java code automatically. AI-driven, simple and fast code visualization tool. Supports cloud AI APIs and local Ollama models.",
   "publisher": "bruce086",
-  "version": "0.0.852502",
+  "version": "0.0.852504",
   "license": "MIT",
   "categories": [
     "Programming Languages",
@@ -11,11 +11,15 @@
     "Other"
   ],
   "keywords": [
-    "deepseek",
     "ai assistant",
-    "code generation",
-    "code helper",
-    "ai coding"
+    "code visualization",
+    "flowchart",
+    "java",
+    "mermaid",
+    "code analysis",
+    "ai coding",
+    "ollama",
+    "code helper"
   ],
   "engines": {
     "vscode": "^1.98.0"
@@ -28,11 +32,11 @@
     "commands": [
       {
         "command": "itforce-helper.openChat",
-        "title": "ITForce: チャットを開く"
+        "title": "ITForce: Open Chat"
       },
       {
         "command": "itforce-helper.generateFlowchart",
-        "title": "🔄 フローチャート生成"
+        "title": "🔄 Generate Flowchart"
       }
     ],
     "menus": {
@@ -55,8 +59,8 @@
       "activitybar": [
         {
           "id": "itforce-helper",
-          "title": "ITForce ヘルパー",
-          "icon": "resources/icon.svg"
+          "title": "ITForce Helper",
+          "icon": "resources/robot-icon.svg"
         }
       ]
     },
@@ -65,38 +69,48 @@
         {
           "type": "webview",
           "id": "itforce-helper.chatView",
-          "name": "ITForce アシスタント"
+          "name": "ITForce Assistant"
         }
       ]
     },
     "configuration": {
-      "title": "ITForce ヘルパー",
+      "title": "ITForce Helper",
       "properties": {
         "itforceHelper.deepseekApiKey": {
           "type": "string",
           "default": "",
-          "markdownDescription": "**必須**: DeepSeek APIキー。これがないとAI機能は動作しません。ここか、またはDEEPSEEK_API_KEY環境変数で設定してください。",
+          "markdownDescription": "**Legacy**: Cloud AI API Key (deprecated, use cloudApiKey instead). Can also be set via DEEPSEEK_API_KEY environment variable.",
           "order": 1
         },
         "itforceHelper.deepseekApiUrl": {
           "type": "string",
           "default": "https://api.deepseek.com/v1/chat/completions",
-          "description": "DeepSeek AIのAPI URL"
+          "description": "Legacy: Cloud AI API URL (deprecated, use cloudApiUrl instead)"
         },
         "itforceHelper.ollamaUrl": {
           "type": "string",
           "default": "http://localhost:11434",
-          "description": "OllamaサーバーのURL"
+          "description": "Ollama server URL for local AI models"
         },
         "itforceHelper.defaultOllamaModel": {
           "type": "string",
           "default": "",
-          "description": "デフォルトで使用するOllamaモデル"
+          "description": "Default Ollama model to use for code analysis"
         },
         "itforceHelper.ollamaModel": {
           "type": "string",
           "default": "codellama:latest",
-          "description": "使用するOllamaモデル名"
+          "description": "Ollama model name for code processing"
+        },
+        "itforceHelper.cloudApiUrl": {
+          "type": "string",
+          "default": "https://api.deepseek.com/v1/chat/completions",
+          "description": "Cloud AI API URL (supports OpenAI-compatible APIs)"
+        },
+        "itforceHelper.cloudApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Cloud AI API Key for authentication"
         }
       }
     }

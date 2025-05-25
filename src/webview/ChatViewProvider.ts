@@ -166,10 +166,139 @@ ${errorMessage}
                     // ここでモデル選択の状態を保存する処理を追加できます
                     break;
 
+                case 'selectCloudModel':
+                    // 選択されたクラウドモデルを保存
+                    console.log('Selected Cloud model:', message.model);
+                    // ここでクラウドモデル選択の状態を保存する処理を追加できます
+                    break;
+
+                case 'selectModel':
+                    // 統一モデル選択を保存
+                    try {
+                        const config = vscode.workspace.getConfiguration('itforceHelper');
+                        await config.update('selectedModel', message.model, vscode.ConfigurationTarget.Global);
+                        console.log('Selected model saved:', message.model);
+                    } catch (error) {
+                        console.error('Failed to save selected model:', error);
+                    }
+                    break;
+
+                case 'getSelectedModel':
+                    // 保存された選択モデルを取得
+                    try {
+                        const config = vscode.workspace.getConfiguration('itforceHelper');
+                        const selectedModel = config.get<string>('selectedModel') || null;
+
+                        webviewView.webview.postMessage({
+                            command: 'selectedModelLoaded',
+                            model: selectedModel
+                        });
+                    } catch (error) {
+                        console.error('Failed to get selected model:', error);
+                    }
+                    break;
+
                 case 'feedback':
                     // 处理反馈
                     console.log(`Received ${message.type} feedback for message:`, message.message);
                     // 这里可以添加将反馈发送到服务器的逻辑
+                    break;
+
+                case 'saveCloudApiSettings':
+                    try {
+                        // 保存云端API设置到VSCode配置
+                        const config = vscode.workspace.getConfiguration('itforceHelper');
+                        await config.update('cloudApiUrl', message.apiUrl, vscode.ConfigurationTarget.Global);
+                        await config.update('cloudApiKey', message.apiKey, vscode.ConfigurationTarget.Global);
+
+                        // 更新AIService的配置
+                        const aiService = AIService.getInstance();
+                        aiService.updateCloudApiSettings(message.apiUrl, message.apiKey);
+
+                        console.log('Cloud API settings saved successfully');
+                    } catch (error) {
+                        console.error('Failed to save cloud API settings:', error);
+                    }
+                    break;
+
+                case 'getCloudApiSettings':
+                    try {
+                        // 从VSCode配置读取云端API设置
+                        const config = vscode.workspace.getConfiguration('itforceHelper');
+                        const apiUrl = config.get<string>('cloudApiUrl') || 'https://api.deepseek.com/v1/chat/completions';
+                        const apiKey = config.get<string>('cloudApiKey') || '';
+
+                        // 发送设置到WebView
+                        webviewView.webview.postMessage({
+                            command: 'cloudApiSettingsLoaded',
+                            apiUrl: apiUrl,
+                            apiKey: apiKey
+                        });
+                    } catch (error) {
+                        console.error('Failed to get cloud API settings:', error);
+                    }
+                    break;
+
+                case 'getCloudModels':
+                    try {
+                        // 获取云端模型列表
+                        const models = await aiService.refreshCloudModels();
+
+                        // 发送模型列表到WebView
+                        webviewView.webview.postMessage({
+                            command: 'cloudModelsLoaded',
+                            models: models
+                        });
+                    } catch (error) {
+                        webviewView.webview.postMessage({
+                            command: 'cloudModelsError',
+                            error: error instanceof Error ? error.message : 'Unknown error'
+                        });
+                    }
+                    break;
+
+                case 'refreshCloudModelsWithSettings':
+                    try {
+                        // 先更新API设置
+                        aiService.updateCloudApiSettings(message.apiUrl, message.apiKey);
+
+                        // 保存到VSCode配置
+                        const config = vscode.workspace.getConfiguration('itforceHelper');
+                        await config.update('cloudApiUrl', message.apiUrl, vscode.ConfigurationTarget.Global);
+                        await config.update('cloudApiKey', message.apiKey, vscode.ConfigurationTarget.Global);
+
+                        // 获取云端模型列表
+                        const models = await aiService.refreshCloudModels();
+
+                        // 发送模型列表到WebView
+                        webviewView.webview.postMessage({
+                            command: 'cloudModelsLoaded',
+                            models: models
+                        });
+                    } catch (error) {
+                        webviewView.webview.postMessage({
+                            command: 'cloudModelsError',
+                            error: error instanceof Error ? error.message : 'Unknown error'
+                        });
+                    }
+                    break;
+
+                case 'getAllModels':
+                    try {
+                        // 获取所有可用模型（Ollama + 云端）
+                        const allModels = aiService.getAllAvailableModels();
+
+                        // 发送所有模型列表到WebView
+                        webviewView.webview.postMessage({
+                            command: 'allModelsLoaded',
+                            models: allModels
+                        });
+                    } catch (error) {
+                        webviewView.webview.postMessage({
+                            command: 'allModelsError',
+                            error: error instanceof Error ? error.message : 'Unknown error'
+                        });
+                    }
                     break;
             }
         });
@@ -215,54 +344,139 @@ ${errorMessage}
                 <style>
                     body {
                         margin: 0;
-                        padding: 20px;
+                        padding: 0;
                         background-color: var(--vscode-editor-background);
                         color: var(--vscode-editor-foreground);
                         font-family: var(--vscode-font-family);
+                        overflow: hidden;
+                        height: 100vh;
+                    }
+
+                    .toolbar {
+                        position: fixed;
+                        top: 10px;
+                        right: 10px;
+                        z-index: 1000;
+                        display: flex;
+                        gap: 8px;
+                        background: var(--vscode-editor-background);
+                        padding: 8px;
+                        border-radius: 6px;
+                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+                        border: 1px solid var(--vscode-panel-border);
+                    }
+
+                    .toolbar button {
+                        background: var(--vscode-button-background);
+                        color: var(--vscode-button-foreground);
+                        border: none;
+                        padding: 6px 12px;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-size: 12px;
+                        display: flex;
+                        align-items: center;
+                        gap: 4px;
+                    }
+
+                    .toolbar button:hover {
+                        background: var(--vscode-button-hoverBackground);
+                    }
+
+                    .toolbar button:disabled {
+                        opacity: 0.5;
+                        cursor: not-allowed;
+                    }
+
+                    .zoom-info {
+                        background: var(--vscode-editor-background);
+                        color: var(--vscode-editor-foreground);
+                        padding: 4px 8px;
+                        border-radius: 4px;
+                        font-size: 12px;
+                        border: 1px solid var(--vscode-panel-border);
                     }
 
                     .container {
-                        max-width: 100%;
-                        margin: 0 auto;
-                        text-align: center;
+                        width: 100%;
+                        height: 100vh;
+                        position: relative;
+                        overflow: hidden;
+                        cursor: grab;
                     }
 
-                    .title {
-                        font-size: 18px;
-                        font-weight: bold;
-                        margin-bottom: 20px;
-                        color: var(--vscode-editor-foreground);
+                    .container.dragging {
+                        cursor: grabbing;
                     }
 
                     .mermaid-container {
+                        position: absolute;
                         background-color: white;
                         border-radius: 8px;
                         padding: 20px;
-                        margin: 20px 0;
                         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-                        overflow: auto;
+                        transform-origin: center center;
+                        transition: transform 0.1s ease-out;
+                        min-width: 300px;
+                        min-height: 200px;
                     }
 
                     .loading {
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
                         padding: 40px;
                         color: var(--vscode-editor-foreground);
                         opacity: 0.7;
+                        text-align: center;
                     }
 
                     .error {
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
                         color: var(--vscode-errorForeground);
                         background-color: var(--vscode-inputValidation-errorBackground);
                         border: 1px solid var(--vscode-inputValidation-errorBorder);
                         padding: 16px;
                         border-radius: 4px;
-                        margin: 20px 0;
+                        max-width: 400px;
+                        text-align: center;
+                    }
+
+                    .title {
+                        position: fixed;
+                        top: 10px;
+                        left: 10px;
+                        font-size: 16px;
+                        font-weight: bold;
+                        color: var(--vscode-editor-foreground);
+                        background: var(--vscode-editor-background);
+                        padding: 8px 12px;
+                        border-radius: 6px;
+                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+                        border: 1px solid var(--vscode-panel-border);
+                        z-index: 1000;
                     }
                 </style>
             </head>
             <body>
-                <div class="container">
-                    <div class="title">フローチャート</div>
-                    <div class="mermaid-container">
+                <div class="title">フローチャート</div>
+
+                <div class="toolbar">
+                    <button id="zoomIn" title="拡大">🔍+</button>
+                    <button id="zoomOut" title="縮小">🔍-</button>
+                    <button id="resetZoom" title="リセット">⚡</button>
+                    <div class="zoom-info" id="zoomInfo">100%</div>
+                    <button id="fitToScreen" title="画面に合わせる">📐</button>
+                    <button id="saveImage" title="画像として保存">💾</button>
+                    <button id="copyImage" title="クリップボードにコピー">📋</button>
+                </div>
+
+                <div class="container" id="container">
+                    <div class="mermaid-container" id="mermaidContainer">
                         <div class="loading" id="loading">フローチャートを生成中...</div>
                         <div class="mermaid" id="mermaid-diagram" style="display: none;">
                             ${mermaidCode}
@@ -276,12 +490,18 @@ ${errorMessage}
                 <script>
                     console.log('=== Simple Flowchart WebView Starting ===');
 
+                    // 状态变量
+                    let currentZoom = 1;
+                    let isDragging = false;
+                    let dragStart = { x: 0, y: 0 };
+                    let currentTranslate = { x: 0, y: 0 };
+
                     // 初始化Mermaid
                     mermaid.initialize({
                         startOnLoad: false,
                         theme: 'default',
                         flowchart: {
-                            useMaxWidth: true,
+                            useMaxWidth: false,
                             htmlLabels: true
                         }
                     });
@@ -289,12 +509,160 @@ ${errorMessage}
                     console.log('Mermaid initialized');
                     console.log('Mermaid code to render:', \`${mermaidCode}\`);
 
+                    // 更新变换
+                    function updateTransform() {
+                        const container = document.getElementById('mermaidContainer');
+                        container.style.transform = \`translate(\${currentTranslate.x}px, \${currentTranslate.y}px) scale(\${currentZoom})\`;
+                        document.getElementById('zoomInfo').textContent = Math.round(currentZoom * 100) + '%';
+                    }
+
+                    // 缩放功能
+                    function zoomIn() {
+                        currentZoom = Math.min(currentZoom * 1.2, 5);
+                        updateTransform();
+                    }
+
+                    function zoomOut() {
+                        currentZoom = Math.max(currentZoom / 1.2, 0.1);
+                        updateTransform();
+                    }
+
+                    function resetZoom() {
+                        currentZoom = 1;
+                        currentTranslate = { x: 0, y: 0 };
+                        updateTransform();
+                        centerDiagram();
+                    }
+
+                    // 居中显示
+                    function centerDiagram() {
+                        const container = document.getElementById('container');
+                        const mermaidContainer = document.getElementById('mermaidContainer');
+                        const containerRect = container.getBoundingClientRect();
+                        const mermaidRect = mermaidContainer.getBoundingClientRect();
+
+                        currentTranslate.x = (containerRect.width - mermaidRect.width) / 2;
+                        currentTranslate.y = (containerRect.height - mermaidRect.height) / 2;
+                        updateTransform();
+                    }
+
+                    // 适应屏幕
+                    function fitToScreen() {
+                        const container = document.getElementById('container');
+                        const mermaidContainer = document.getElementById('mermaidContainer');
+                        const containerRect = container.getBoundingClientRect();
+                        const mermaidRect = mermaidContainer.getBoundingClientRect();
+
+                        const scaleX = (containerRect.width * 0.9) / mermaidRect.width;
+                        const scaleY = (containerRect.height * 0.9) / mermaidRect.height;
+                        currentZoom = Math.min(scaleX, scaleY, 1);
+
+                        currentTranslate.x = (containerRect.width - mermaidRect.width * currentZoom) / 2;
+                        currentTranslate.y = (containerRect.height - mermaidRect.height * currentZoom) / 2;
+                        updateTransform();
+                    }
+
+                    // 保存为图片
+                    async function saveAsImage() {
+                        try {
+                            const svg = document.querySelector('#mermaid-diagram svg');
+                            if (!svg) return;
+
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            const svgData = new XMLSerializer().serializeToString(svg);
+                            const img = new Image();
+
+                            img.onload = function() {
+                                canvas.width = img.width;
+                                canvas.height = img.height;
+                                ctx.fillStyle = 'white';
+                                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                                ctx.drawImage(img, 0, 0);
+
+                                const link = document.createElement('a');
+                                link.download = 'flowchart.png';
+                                link.href = canvas.toDataURL();
+                                link.click();
+                            };
+
+                            img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+                        } catch (error) {
+                            console.error('Save image failed:', error);
+                        }
+                    }
+
+                    // 复制到剪贴板
+                    async function copyToClipboard() {
+                        try {
+                            const svg = document.querySelector('#mermaid-diagram svg');
+                            if (!svg) return;
+
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            const svgData = new XMLSerializer().serializeToString(svg);
+                            const img = new Image();
+
+                            img.onload = async function() {
+                                canvas.width = img.width;
+                                canvas.height = img.height;
+                                ctx.fillStyle = 'white';
+                                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                                ctx.drawImage(img, 0, 0);
+
+                                canvas.toBlob(async (blob) => {
+                                    await navigator.clipboard.write([
+                                        new ClipboardItem({ 'image/png': blob })
+                                    ]);
+                                    console.log('Image copied to clipboard');
+                                });
+                            };
+
+                            img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+                        } catch (error) {
+                            console.error('Copy to clipboard failed:', error);
+                        }
+                    }
+
+                    // 拖拽功能
+                    function setupDragAndDrop() {
+                        const container = document.getElementById('container');
+
+                        container.addEventListener('mousedown', (e) => {
+                            isDragging = true;
+                            dragStart.x = e.clientX - currentTranslate.x;
+                            dragStart.y = e.clientY - currentTranslate.y;
+                            container.classList.add('dragging');
+                        });
+
+                        document.addEventListener('mousemove', (e) => {
+                            if (!isDragging) return;
+                            currentTranslate.x = e.clientX - dragStart.x;
+                            currentTranslate.y = e.clientY - dragStart.y;
+                            updateTransform();
+                        });
+
+                        document.addEventListener('mouseup', () => {
+                            isDragging = false;
+                            container.classList.remove('dragging');
+                        });
+
+                        // 鼠标滚轮缩放
+                        container.addEventListener('wheel', (e) => {
+                            e.preventDefault();
+                            const delta = e.deltaY > 0 ? 0.9 : 1.1;
+                            currentZoom = Math.max(0.1, Math.min(5, currentZoom * delta));
+                            updateTransform();
+                        });
+                    }
+
                     // 渲染流程图
                     async function renderFlowchart() {
                         try {
                             const loadingEl = document.getElementById('loading');
                             const diagramEl = document.getElementById('mermaid-diagram');
                             const errorEl = document.getElementById('error');
+                            const mermaidContainer = document.getElementById('mermaidContainer');
 
                             console.log('Starting to render mermaid diagram...');
 
@@ -316,6 +684,12 @@ ${errorMessage}
                             diagramEl.innerHTML = svg;
                             diagramEl.style.display = 'block';
 
+                            // 初始化位置
+                            setTimeout(() => {
+                                centerDiagram();
+                                setupDragAndDrop();
+                            }, 100);
+
                             console.log('Flowchart displayed successfully');
 
                         } catch (error) {
@@ -330,8 +704,41 @@ ${errorMessage}
                         }
                     }
 
-                    // 页面加载完成后渲染
+                    // 事件监听器
                     document.addEventListener('DOMContentLoaded', () => {
+                        // 工具栏按钮事件
+                        document.getElementById('zoomIn').addEventListener('click', zoomIn);
+                        document.getElementById('zoomOut').addEventListener('click', zoomOut);
+                        document.getElementById('resetZoom').addEventListener('click', resetZoom);
+                        document.getElementById('fitToScreen').addEventListener('click', fitToScreen);
+                        document.getElementById('saveImage').addEventListener('click', saveAsImage);
+                        document.getElementById('copyImage').addEventListener('click', copyToClipboard);
+
+                        // 键盘快捷键
+                        document.addEventListener('keydown', (e) => {
+                            if (e.ctrlKey || e.metaKey) {
+                                switch (e.key) {
+                                    case '=':
+                                    case '+':
+                                        e.preventDefault();
+                                        zoomIn();
+                                        break;
+                                    case '-':
+                                        e.preventDefault();
+                                        zoomOut();
+                                        break;
+                                    case '0':
+                                        e.preventDefault();
+                                        resetZoom();
+                                        break;
+                                    case 's':
+                                        e.preventDefault();
+                                        saveAsImage();
+                                        break;
+                                }
+                            }
+                        });
+
                         console.log('DOM loaded, starting render...');
                         renderFlowchart();
                     });
@@ -496,20 +903,24 @@ ${errorMessage}
                     }
 
                     .input-container {
-                        flex: 0 0 auto; /* 防止输入区域被压缩 */
+                        flex: 0 0 auto;
                         border-top: 1px solid var(--vscode-panel-border);
-                        padding: 12px 16px;
+                        padding: 12px;
                         background: var(--vscode-editor-background);
-                        width: 100%;
                         box-sizing: border-box;
+                    }
+
+                    .input-wrapper {
+                        display: flex;
+                        flex-direction: column;
+                        width: 100%;
                     }
 
                     .input-row {
                         display: flex;
-                        gap: 8px;
-                        margin-top: 8px;
-                        align-items: center;
                         position: relative;
+                        width: 100%;
+                        margin-bottom: 8px;
                     }
 
                     #messageInput {
@@ -528,28 +939,25 @@ ${errorMessage}
                         transition: border-color 0.2s, box-shadow 0.2s;
                     }
 
-                    #messageInput:focus {
-                        outline: none;
-                        border-color: var(--vscode-focusBorder);
-                        box-shadow: 0 0 0 1px var(--vscode-focusBorder);
-                    }
-
-                    #messageInput::placeholder {
-                        color: var(--vscode-input-placeholderForeground);
-                        opacity: 0.6;
-                    }
-
                     .model-selector-row {
                         display: flex;
-                        align-items: center;
-                        justify-content: space-between;
-                        padding: 8px 0;
+                        width: 100%;
+                        gap: 8px;
                         border-top: 1px solid var(--vscode-panel-border);
-                        background-color: var(--vscode-editor-background);
-                        gap: 12px;
+                        padding-top: 8px;
                     }
 
-                    #modelSelect, #outputFormatSelect, #outputFormatConfig {
+                    #outputFormatSelect {
+                        flex: 1;
+                        max-width: 60%;
+                    }
+
+                    #modelSelect {
+                        flex: 1;
+                        max-width: 40%;
+                    }
+
+                    #outputFormatSelect, #modelSelect {
                         padding: 6px 10px;
                         background: var(--vscode-dropdown-background);
                         color: var(--vscode-dropdown-foreground);
@@ -564,23 +972,9 @@ ${errorMessage}
                         background-position: right 6px center;
                         background-size: 12px;
                         padding-right: 24px;
-                        flex: 1;
-                        max-width: 200px;
-                        opacity: 0.9;
-                        transition: all 0.2s ease;
-                        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-                    }
-
-                    #modelSelect:hover, #outputFormatSelect:hover, #outputFormatConfig:hover {
-                        opacity: 1;
-                        border-color: var(--vscode-focusBorder);
-                    }
-
-                    #modelSelect:focus, #outputFormatSelect:focus, #outputFormatConfig:focus {
-                        outline: none;
-                        border-color: var(--vscode-focusBorder);
-                        box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.25);
-                        opacity: 1;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                        overflow: hidden;
                     }
 
                     #sendButton {
@@ -686,18 +1080,12 @@ ${errorMessage}
                     /* ヘッダースタイル */
                     .header {
                         display: flex;
-                        justify-content: space-between;
+                        justify-content: flex-end;
                         align-items: center;
                         padding: 10px 16px;
                         background-color: var(--vscode-editor-background);
                         border-bottom: 1px solid var(--vscode-panel-border);
                         height: 40px;
-                    }
-
-                    .title {
-                        font-size: 14px;
-                        font-weight: 500;
-                        color: var(--vscode-foreground);
                     }
 
                     .actions {
@@ -947,7 +1335,6 @@ ${errorMessage}
             </head>
             <body>
                 <div class="header">
-                    <div class="title">ITFORCE ヘルパー</div>
                     <div class="actions">
                         <button class="icon-button" id="newChatButton" title="新しいチャット">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -974,82 +1361,36 @@ ${errorMessage}
                     <div id="chatContainer" class="chat-container"></div>
 
                     <div class="input-container">
-                        <div class="input-row">
-                            <textarea id="messageInput" placeholder="メッセージを入力してください..."></textarea>
-                            <button id="sendButton" onclick="sendMessage()" title="送信">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <line x1="22" y1="2" x2="11" y2="13"></line>
-                                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                                </svg>
-                            </button>
-                        </div>
-                        <div class="model-selector-row">
-                            <select id="outputFormatSelect" disabled style="opacity: 0.5;">
-                                <option value="simple" selected>シンプルMermaid（現在のみ対応）</option>
-                            </select>
-                            <select id="modelSelect">
-                                <optgroup label="DeepSeek モデル">
-                                    <option value="deepseek-chat">DeepSeek Chat - 一般会話</option>
-                                    <option value="deepseek-coder">DeepSeek Coder - コード最適化</option>
-                                    <option value="deepseek-reasoner">DeepSeek Reasoner 推論</option>
-                                </optgroup>
-                                <optgroup label="Ollama モデル" id="ollamaModels">
-                                    <option value="ollama-loading" disabled>読み込み中...</option>
-                                </optgroup>
-                            </select>
+                        <div class="input-wrapper">
+                            <div class="input-row">
+                                <textarea id="messageInput" placeholder="メッセージを入力してください..."></textarea>
+                                <button id="sendButton" onclick="sendMessage()" title="送信">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="model-selector-row">
+                                <select id="outputFormatSelect" disabled style="opacity: 0.5;">
+                                    <option value="simple" selected>シンプルMermaid（現在のみ対応）</option>
+                                </select>
+                                <select id="modelSelect">
+                                    <optgroup label="クラウドモデル" id="cloudModels">
+                                        <option value="no-cloud-models" disabled>クラウドモデルが見つかりません</option>
+                                    </optgroup>
+                                    <optgroup label="Ollama モデル" id="ollamaModels">
+                                        <option value="no-models" disabled>読み込み中...</option>
+                                    </optgroup>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <div id="settingsTab" class="tab-content">
                     <div class="settings-container">
-                        <div class="settings-group">
-                            <div class="settings-title">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="12" cy="12" r="3"></circle>
-                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                                </svg>
-                                Ollama設定
-                            </div>
-                            <div class="settings-row">
-                                <label for="ollamaUrl">URL:</label>
-                                <div style="display: flex; flex: 1; gap: 8px;">
-                                    <input type="text" id="ollamaUrl" value="http://localhost:11434" style="flex: 1;" />
-                                    <button id="refreshModelsBtn" title="更新" class="icon-only-button">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M23 4v6h-6"></path>
-                                            <path d="M1 20v-6h6"></path>
-                                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path>
-                                            <path d="M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="settings-group">
-                            <div class="settings-title">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"></path>
-                                    <circle cx="8" cy="16" r="1"></circle>
-                                    <circle cx="16" cy="16" r="1"></circle>
-                                    <path d="M9 12h6"></path>
-                                </svg>
-                                利用可能なモデル
-                            </div>
-                            <div class="model-list" id="modelListContainer">
-                                <div class="loading" style="padding: 12px; text-align: center; color: var(--vscode-descriptionForeground);">
-                                    <div style="margin-bottom: 8px;">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite;">
-                                            <circle cx="12" cy="12" r="10"></circle>
-                                            <path d="M12 6v6l4 2"></path>
-                                        </svg>
-                                    </div>
-                                    モデルを読み込み中...
-                                </div>
-                            </div>
-                        </div>
-
+                        <!-- 出力形式設定 -->
                         <div class="settings-group">
                             <div class="settings-title">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1067,6 +1408,82 @@ ${errorMessage}
                                     <option value="json" disabled>JSON形式（未実装）</option>
                                     <option value="enhanced" disabled>拡張Mermaid+JSON（未実装）</option>
                                 </select>
+                            </div>
+                        </div>
+
+                        <!-- Ollama設定 -->
+                        <div class="settings-group">
+                            <div class="settings-title">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                </svg>
+                                ローカルモデル (Ollama)
+                            </div>
+                            <div class="settings-row">
+                                <label for="ollamaUrl">URL:</label>
+                                <div style="display: flex; flex: 1; gap: 8px;">
+                                    <input type="text" id="ollamaUrl" value="http://localhost:11434" style="flex: 1;" />
+                                    <button id="refreshModelsBtn" title="更新" class="icon-only-button">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M23 4v6h-6"></path>
+                                            <path d="M1 20v-6h6"></path>
+                                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path>
+                                            <path d="M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="model-list" id="modelListContainer">
+                                <div class="loading" style="padding: 12px; text-align: center; color: var(--vscode-descriptionForeground);">
+                                    <div style="margin-bottom: 8px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite;">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <path d="M12 6v6l4 2"></path>
+                                        </svg>
+                                    </div>
+                                    ローカルモデルを読み込み中...
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- クラウドAI設定 -->
+                        <div class="settings-group">
+                            <div class="settings-title">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                                </svg>
+                                クラウドモデル
+                            </div>
+                            <div class="settings-row">
+                                <label for="cloudApiUrl">API URL:</label>
+                                <div style="display: flex; flex: 1; gap: 8px;">
+                                    <input type="text" id="cloudApiUrl" value="https://api.deepseek.com/v1/chat/completions" placeholder="https://api.deepseek.com/v1/chat/completions" style="flex: 1;" />
+                                    <button id="refreshCloudModelsBtn" class="icon-only-button" title="更新">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+                                            <path d="M21 3v5h-5"></path>
+                                            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+                                            <path d="M3 21v-5h5"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="settings-row">
+                                <label for="cloudApiKey">API Key:</label>
+                                <input type="password" id="cloudApiKey" placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />
+                            </div>
+                            <div class="model-list" id="cloudModelListContainer">
+                                <div class="loading" style="padding: 12px; text-align: center; color: var(--vscode-descriptionForeground);">
+                                    <div style="margin-bottom: 8px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite;">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <path d="M12 6v6l4 2"></path>
+                                        </svg>
+                                    </div>
+                                    クラウドモデルを読み込み中...
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1168,12 +1585,28 @@ ${errorMessage}
                         // 获取当前选择的模型
                         const currentModel = document.getElementById('modelSelect').value;
 
-                        // 添加所有模型选项
-                        const models = [
-                            { value: 'deepseek-chat', label: 'DeepSeek Chat' },
-                            { value: 'deepseek-coder', label: 'DeepSeek Coder' },
-                            { value: 'deepseek-reasoner', label: 'DeepSeek Reasoner' }
-                        ];
+                        // 动态获取所有可用模型
+                        const models = [];
+
+                        // 添加云端模型
+                        const cloudOptgroup = document.getElementById('cloudModels');
+                        if (cloudOptgroup) {
+                            Array.from(cloudOptgroup.options).forEach(option => {
+                                if (!option.disabled && option.value !== 'no-cloud-models') {
+                                    models.push({ value: option.value, label: '☁ ' + option.textContent });
+                                }
+                            });
+                        }
+
+                        // 添加Ollama模型
+                        const ollamaOptgroup = document.getElementById('ollamaModels');
+                        if (ollamaOptgroup) {
+                            Array.from(ollamaOptgroup.options).forEach(option => {
+                                if (!option.disabled && option.value !== 'no-models') {
+                                    models.push({ value: option.value, label: '🏠 ' + option.textContent });
+                                }
+                            });
+                        }
 
                         models.forEach(model => {
                             const menuItem = document.createElement('div');
@@ -1359,12 +1792,12 @@ ${errorMessage}
                         document.getElementById('chatTab').classList.add('active');
                     });
 
+                    // 選択されたモデルを保存する変数
+                    let selectedModel = null;
+
                     // Ollamaモデルの読み込み
                     async function loadOllamaModels() {
                         try {
-                            const modelListContainer = document.getElementById('modelListContainer');
-                            modelListContainer.innerHTML = '<div class="loading">モデルを読み込み中...</div>';
-
                             // VSCodeにモデル取得リクエストを送信
                             vscode.postMessage({
                                 command: 'getOllamaModels',
@@ -1378,7 +1811,97 @@ ${errorMessage}
                     // モデル更新ボタンのイベントリスナー
                     document.getElementById('refreshModelsBtn').addEventListener('click', loadOllamaModels);
 
-                    // モデルリストの更新
+                    // クラウドモデル更新ボタンのイベントリスナー
+                    document.getElementById('refreshCloudModelsBtn').addEventListener('click', loadCloudModels);
+
+                    // 统一模型选择逻辑 - 处理本地和云端模型的选择
+                    function selectModel(modelValue, modelType) {
+                        selectedModel = modelValue;
+
+                        // 清除所有模型的选择状态
+                        document.querySelectorAll('.model-item').forEach(item => {
+                            item.classList.remove('selected');
+                        });
+
+                        // 设置当前选择的模型为选中状态
+                        const currentItem = document.querySelector(\`[data-model="\${modelValue}"]\`);
+                        if (currentItem) {
+                            currentItem.classList.add('selected');
+                        }
+
+                        // 保存選択したモデル
+                        vscode.postMessage({
+                            command: 'selectModel',
+                            model: modelValue
+                        });
+
+                        // チャットページのモデル選択器を更新
+                        updateChatModelSelector();
+                    }
+
+                    // チャットページのモデル選択器を更新
+                    function updateChatModelSelector() {
+                        const modelSelect = document.getElementById('modelSelect');
+
+                        // 選択されたモデルを設定
+                        if (selectedModel) {
+                            modelSelect.value = selectedModel;
+                        } else {
+                            // 選択されたモデルがない場合、最初の利用可能なモデルを選択
+                            const firstOption = modelSelect.querySelector('option:not([disabled])');
+                            if (firstOption) {
+                                selectedModel = firstOption.value;
+                                modelSelect.value = selectedModel;
+                            }
+                        }
+                    }
+
+                    // クラウドモデルの読み込み
+                    async function loadCloudModels() {
+                        try {
+                            const button = document.getElementById('refreshCloudModelsBtn');
+                            button.disabled = true;
+                            button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite;"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>';
+
+                            // 先保存当前的API设置
+                            const apiUrl = document.getElementById('cloudApiUrl').value;
+                            const apiKey = document.getElementById('cloudApiKey').value;
+
+                            // 发送API设置更新和模型获取请求
+                            vscode.postMessage({
+                                command: 'refreshCloudModelsWithSettings',
+                                apiUrl: apiUrl,
+                                apiKey: apiKey
+                            });
+                        } catch (error) {
+                            console.error('クラウドモデル読み込みエラー:', error);
+                        }
+                    }
+
+                    // クラウドAPI設定の保存
+                    function saveCloudApiSettings() {
+                        const apiUrl = document.getElementById('cloudApiUrl').value;
+                        const apiKey = document.getElementById('cloudApiKey').value;
+
+                        vscode.postMessage({
+                            command: 'saveCloudApiSettings',
+                            apiUrl: apiUrl,
+                            apiKey: apiKey
+                        });
+                    }
+
+                    // クラウドAPI設定の入力フィールドにイベントリスナーを追加
+                    document.getElementById('cloudApiUrl').addEventListener('blur', saveCloudApiSettings);
+                    document.getElementById('cloudApiKey').addEventListener('blur', saveCloudApiSettings);
+
+                    // 設定の初期化
+                    function initializeSettings() {
+                        vscode.postMessage({
+                            command: 'getCloudApiSettings'
+                        });
+                    }
+
+                    // Ollamaモデルリストの更新
                     function updateModelList(models) {
                         const container = document.getElementById('modelListContainer');
                         if (models.length === 0) {
@@ -1390,14 +1913,14 @@ ${errorMessage}
                                             <line x1="8" y1="12" x2="16" y2="12"></line>
                                         </svg>
                                     </div>
-                                    利用可能なモデルがありません
+                                    利用可能なローカルモデルがありません
                                 </div>\`;
                             return;
                         }
 
                         let html = '';
                         models.forEach(model => {
-                            html += \`<div class="model-item" data-model="\${model}">
+                            html += \`<div class="model-item" data-model="\${model}" data-type="ollama">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"></path>
                                     <circle cx="8" cy="16" r="1"></circle>
@@ -1411,22 +1934,50 @@ ${errorMessage}
                         container.innerHTML = html;
 
                         // モデル選択イベントの設定
-                        document.querySelectorAll('.model-item').forEach(item => {
+                        document.querySelectorAll('#modelListContainer .model-item').forEach(item => {
                             item.addEventListener('click', () => {
-                                document.querySelectorAll('.model-item').forEach(i => {
-                                    i.classList.remove('selected');
-                                });
-                                item.classList.add('selected');
+                                const modelName = item.getAttribute('data-model');
+                                const modelValue = \`ollama:\${modelName}\`;
+                                selectModel(modelValue, 'ollama');
+                            });
+                        });
+                    }
 
-                                const selectedModel = item.getAttribute('data-model');
-                                // 選択したモデルを保存
-                                vscode.postMessage({
-                                    command: 'selectOllamaModel',
-                                    model: selectedModel
-                                });
+                    // クラウドモデルリストの更新
+                    function updateCloudModelList(models) {
+                        const container = document.getElementById('cloudModelListContainer');
+                        if (models.length === 0) {
+                            container.innerHTML = \`
+                                <div class="empty" style="padding: 16px; text-align: center; color: var(--vscode-descriptionForeground);">
+                                    <div style="margin-bottom: 8px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="8" y1="12" x2="16" y2="12"></line>
+                                        </svg>
+                                    </div>
+                                    利用可能なクラウドモデルがありません
+                                </div>\`;
+                            return;
+                        }
 
-                                // ドロップダウンも更新
-                                updateModelDropdown(models, selectedModel);
+                        let html = '';
+                        models.forEach(model => {
+                            html += \`<div class="model-item" data-model="\${model}" data-type="cloud">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                                </svg>
+                                \${model}
+                            </div>\`;
+                        });
+
+                        container.innerHTML = html;
+
+                        // モデル選択イベントの設定
+                        document.querySelectorAll('#cloudModelListContainer .model-item').forEach(item => {
+                            item.addEventListener('click', () => {
+                                const modelValue = item.getAttribute('data-model');
+                                selectModel(modelValue, 'cloud');
                             });
                         });
                     }
@@ -1456,6 +2007,30 @@ ${errorMessage}
                         });
                     }
 
+                    // Ollamaドロップダウンで選択されたモデルを設定（モデルリストは変更しない）
+                    function setSelectedOllamaModelInDropdown(selectedModel) {
+                        const optgroup = document.getElementById('ollamaModels');
+
+                        if (optgroup) {
+                            // 全ての選択状態をクリア
+                            Array.from(optgroup.options).forEach(option => {
+                                option.selected = false;
+                            });
+
+                            // 指定されたモデルを選択状態にする
+                            const targetValue = \`ollama:\${selectedModel}\`;
+                            const targetOption = Array.from(optgroup.options).find(option => option.value === targetValue);
+                            if (targetOption) {
+                                targetOption.selected = true;
+                                document.getElementById('modelSelect').value = targetValue;
+                            }
+                        }
+                    }
+
+                    // 保存されたモデルデータ
+                    let currentOllamaModels = [];
+                    let currentCloudModels = [];
+
                     // VSCodeからのメッセージ処理を拡張
                     window.addEventListener('message', event => {
                         const message = event.data;
@@ -1463,26 +2038,113 @@ ${errorMessage}
                         // Ollamaモデルリスト受信処理を追加
                         if (message.command === 'ollamaModelsLoaded') {
                             const models = message.models || [];
-                            updateModelList(models);
+                            currentOllamaModels = models;
                             updateModelDropdown(models);
+                            updateModelList(models);
+                            updateChatModelSelector();
                         } else if (message.command === 'ollamaModelsError') {
-                            const container = document.getElementById('modelListContainer');
-                            container.innerHTML = \`
-                                <div class="error" style="padding: 16px; text-align: center; color: var(--vscode-errorForeground);">
-                                    <div style="margin-bottom: 8px;">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <circle cx="12" cy="12" r="10"></circle>
-                                            <line x1="12" y1="8" x2="12" y2="12"></line>
-                                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                                        </svg>
-                                    </div>
-                                    エラー: \${message.error}
-                                </div>\`;
+                            currentOllamaModels = [];
+                            updateModelList([]);
+                            updateChatModelSelector();
+                        } else if (message.command === 'cloudApiSettingsLoaded') {
+                            // クラウドAPI設定を画面に反映
+                            if (message.apiUrl) {
+                                document.getElementById('cloudApiUrl').value = message.apiUrl;
+                            }
+                            if (message.apiKey) {
+                                document.getElementById('cloudApiKey').value = message.apiKey;
+                            }
+                        } else if (message.command === 'cloudModelsLoaded') {
+                            // クラウドモデルリスト受信処理
+                            const models = message.models || [];
+                            currentCloudModels = models;
+                            updateCloudModelDropdown(models);
+                            updateCloudModelList(models);
+                            updateChatModelSelector();
+                            resetCloudModelsButton();
+                        } else if (message.command === 'cloudModelsError') {
+                            console.error('クラウドモデル取得エラー:', message.error);
+                            currentCloudModels = [];
+                            updateCloudModelList([]);
+                            updateCloudModelDropdown([]);
+                            updateChatModelSelector();
+                            resetCloudModelsButton();
+                        } else if (message.command === 'selectedModelLoaded') {
+                            // 保存された選択モデルを復元
+                            selectedModel = message.model;
+                            updateChatModelSelector();
                         }
                     });
 
+                    // クラウドモデルドロップダウンの更新
+                    function updateCloudModelDropdown(models) {
+                        const cloudOptgroup = document.getElementById('cloudModels');
+
+                        if (cloudOptgroup) {
+                            cloudOptgroup.innerHTML = '';
+
+                            if (models.length === 0) {
+                                const option = document.createElement('option');
+                                option.value = 'no-cloud-models';
+                                option.disabled = true;
+                                option.textContent = 'クラウドモデルが見つかりません';
+                                cloudOptgroup.appendChild(option);
+                            } else {
+                                models.forEach(model => {
+                                    const option = document.createElement('option');
+                                    option.value = model;
+                                    option.textContent = model;
+                                    cloudOptgroup.appendChild(option);
+                                });
+                            }
+                        }
+                    }
+
+                    // ドロップダウンで選択されたモデルを設定（モデルリストは変更しない）
+                    function setSelectedModelInDropdown(selectedModel) {
+                        const modelSelect = document.getElementById('modelSelect');
+                        const cloudOptgroup = document.getElementById('cloudModels');
+
+                        if (cloudOptgroup) {
+                            // 全ての選択状態をクリア
+                            Array.from(cloudOptgroup.options).forEach(option => {
+                                option.selected = false;
+                            });
+
+                            // 指定されたモデルを選択状態にする
+                            const targetOption = Array.from(cloudOptgroup.options).find(option => option.value === selectedModel);
+                            if (targetOption) {
+                                targetOption.selected = true;
+                                modelSelect.value = selectedModel;
+                            }
+                        }
+                    }
+
+                    // 全モデルドロップダウンの更新
+                    function updateAllModelDropdowns(allModels) {
+                        updateCloudModelList(allModels.cloud);
+                        updateCloudModelDropdown(allModels.cloud);
+                        updateModelList(allModels.ollama);
+                        updateModelDropdown(allModels.ollama);
+                    }
+
+                    // クラウドモデルボタンのリセット
+                    function resetCloudModelsButton() {
+                        const button = document.getElementById('refreshCloudModelsBtn');
+                        button.disabled = false;
+                        button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M3 21v-5h5"></path></svg>';
+                    }
+
                     // 初期ロード時にモデルを取得
-                    setTimeout(loadOllamaModels, 1000);
+                    setTimeout(() => {
+                        loadOllamaModels();
+                        loadCloudModels();
+                        // 保存された選択モデルを取得
+                        vscode.postMessage({ command: 'getSelectedModel' });
+                    }, 1000);
+
+                    // 初期ロード時に設定を取得
+                    setTimeout(initializeSettings, 500);
                 </script>
             </body>
             </html>

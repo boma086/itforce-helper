@@ -9,20 +9,26 @@ export class AIService {
     private ollamaAdapter: OllamaAdapter;
     private ollamaUrl: string = 'http://localhost:11434';
     private availableOllamaModels: string[] = [];
+    private availableCloudModels: string[] = [];
 
     private constructor() {
         const config = vscode.workspace.getConfiguration('itforceHelper');
 
-        // 获取 API 密钥
-        const deepseekApiKey = config.get<string>('deepseekApiKey') || process.env.DEEPSEEK_API_KEY || '';
-        const deepseekApiUrl = config.get<string>('deepseekApiUrl') || 'https://api.deepseek.com/v1/chat/completions';
+        // 获取云端API配置（优先使用新的配置字段）
+        const cloudApiKey = config.get<string>('cloudApiKey') || config.get<string>('deepseekApiKey') || process.env.DEEPSEEK_API_KEY || '';
+        const cloudApiUrl = config.get<string>('cloudApiUrl') || config.get<string>('deepseekApiUrl') || 'https://api.deepseek.com/v1/chat/completions';
 
-        this.deepseekAdapter = new DeepSeekAdapter(deepseekApiKey, deepseekApiUrl);
+        this.deepseekAdapter = new DeepSeekAdapter(cloudApiKey, cloudApiUrl);
         this.claudeAdapter = new ClaudeAdapter(config.get<string>('claudeApiKey') || '');
         this.ollamaAdapter = new OllamaAdapter(config.get<string>('ollamaUrl') || this.ollamaUrl);
 
         // 初始化Ollama模型
         this.refreshOllamaModels().catch(() => {
+            // 忽略初始化失败
+        });
+
+        // 初始化云端模型
+        this.refreshCloudModels().catch(() => {
             // 忽略初始化失败
         });
     }
@@ -32,6 +38,25 @@ export class AIService {
             AIService.instance = new AIService();
         }
         return AIService.instance;
+    }
+
+    /**
+     * 更新云端API设置
+     */
+    public updateCloudApiSettings(apiUrl: string, apiKey: string): void {
+        try {
+            // 更新DeepSeek适配器的配置
+            this.deepseekAdapter = new DeepSeekAdapter(apiKey, apiUrl);
+            console.log('Cloud API settings updated successfully');
+
+            // 重新获取云端模型列表
+            this.refreshCloudModels().catch(() => {
+                console.warn('Failed to refresh cloud models after settings update');
+            });
+        } catch (error) {
+            console.error('Failed to update cloud API settings:', error);
+            throw error;
+        }
     }
 
 
@@ -61,6 +86,39 @@ export class AIService {
      */
     public getAvailableOllamaModels(): string[] {
         return this.availableOllamaModels;
+    }
+
+    /**
+     * 云端模型列表を更新します
+     */
+    public async refreshCloudModels(): Promise<string[]> {
+        try {
+            console.log('Refreshing cloud models...');
+            this.availableCloudModels = await this.deepseekAdapter.getAvailableModels();
+            console.log('Available cloud models:', this.availableCloudModels);
+            return this.availableCloudModels;
+        } catch (error) {
+            console.error('Failed to refresh cloud models:', error);
+            this.availableCloudModels = [];
+            throw error;
+        }
+    }
+
+    /**
+     * 利用可能な云端モデルのリストを取得します
+     */
+    public getAvailableCloudModels(): string[] {
+        return this.availableCloudModels;
+    }
+
+    /**
+     * 所有可用模型（Ollama + 云端）を取得します
+     */
+    public getAllAvailableModels(): { ollama: string[], cloud: string[] } {
+        return {
+            ollama: this.availableOllamaModels,
+            cloud: this.availableCloudModels
+        };
     }
 
     /**
