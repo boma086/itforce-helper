@@ -1,63 +1,124 @@
-# ITForce Helper / ITForce 助手
+# ITForce Helper - Java フローチャート生成
 
-A powerful VS Code extension that enhances development workflow with AI assistance and code quality tools.
-一个强大的 VS Code 扩展，通过 AI 辅助和代码质量工具增强开发工作流程。
+🚀 **Javaコードから美しいフローチャートを自動生成**
 
-## Key Features / 主要特性
+AI駆動のシンプルで高速なコード可視化ツール。複雑なJavaコードを直感的なフローチャートに変換し、コードの理解と文書化を支援します。
 
-🤖 **AI-Powered Development / AI 驱动开发**
-- Code generation using DeepSeek AI / 使用 DeepSeek AI 生成代码
-- Smart development planning and suggestions / 智能开发规划和建议
-- Built-in AI chat interface / 内置 AI 聊天界面
+## ✨ 主な機能
 
-🛠️ **Code Quality / 代码质量**
-- Real-time code validation / 实时代码验证
-- Automatic code fixes / 自动代码修复
-- TypeScript type checking / TypeScript 类型检查
+- 🎯 **ワンクリック生成**: Javaコードを貼り付けて「生成流程图」と入力するだけ
+- 🎨 **美しいビジュアル**: Mermaid.js による高品質なフローチャート
+- ⚡ **高速処理**: 数秒でコードを解析してフローチャートを生成
+- 🤖 **AI駆動**: DeepSeek API または Ollama ローカルモデル対応
+- 🌐 **多言語対応**: 日本語、英語、中国語のインターフェース
 
-🔄 **Version Management / 版本管理**
-- Smart code checkpoint system / 智能代码检查点系统
-- Quick checkpoint creation/restoration / 快速创建和恢复检查点
+## 🚀 クイックスタート
 
-## Installation / 安装
+### 1. インストール
+VS Code の拡張機能マーケットプレイスから「ITForce Helper」をインストール
 
-1. Install from VS Code Marketplace / 从 VS Code 商店安装
-2. Configure DeepSeek API key (required) / 配置 DeepSeek API 密钥（必需）
+### 2. API キー設定
+以下のいずれかの方法で DeepSeek API キーを設定：
 
-## Configuration / 配置
+**方法A: VS Code 設定**
+```json
+{
+  "itforceHelper.deepseekApiKey": "your-api-key-here"
+}
+```
 
-1. Copy `.env.example` to `.env`
-2. Add your DeepSeek API key to `.env`
-3. Never commit `.env` file to version control
+**方法B: 環境変数**
+```bash
+export DEEPSEEK_API_KEY="your-api-key-here"
+```
 
-## Usage / 使用方法
+### 3. 使用開始
+1. サイドバーの ITForce ヘルパーアイコンをクリック
+2. Javaコードを貼り付け
+3. 「生成流程图」と入力
+4. 美しいフローチャートが新しいパネルに表示されます！
 
-### Commands / 命令
-- `ITForce: Generate Code` - AI-powered code generation / AI 驱动的代码生成
-- `ITForce: Hello World` - Test extension setup / 测试扩展设置
+## 📖 使用例
 
-### Settings / 设置
-- `itforceHelper.deepseekApiKey`: DeepSeek API key / DeepSeek API 密钥
-- `itforceHelper.deepseekApiUrl`: Custom API URL (optional) / 自定义 API URL（可选）
+### 入力例
+```java
+@Component
+public class BCryptProvider implements HashProvider {
+  @Override
+  public String hashPassword(String plainPassword) {
+    return BCrypt.hashpw(plainPassword, BCrypt.gensalt());
+  }
 
-## Development / 开发
+  @Override
+  public boolean isPasswordValid(String plainText, String hashed) {
+    return BCrypt.checkpw(plainText, hashed);
+  }
+}
+```
 
-### Prerequisites / 前提条件
-- VS Code ^1.98.0
-- Node.js
-- npm
+### 出力
+美しいMermaidフローチャートが自動生成され、メソッドの流れと関係性が視覚化されます。
 
-### Setup / 设置
-1. Clone repository / 克隆仓库
-2. Install dependencies / 安装依赖: `npm install`
-3. Run `npm run watch` for development / 运行开发模式
+## ⚙️ 設定オプション
 
-## License / 许可证
+| 設定項目 | デフォルト値 | 説明 |
+|---------|-------------|------|
+| `itforceHelper.deepseekApiKey` | - | **必須**: DeepSeek API キー |
+| `itforceHelper.deepseekApiUrl` | `https://api.deepseek.com/v1/chat/completions` | DeepSeek API URL |
+| `itforceHelper.ollamaUrl` | `http://localhost:11434` | Ollama サーバー URL |
+| `itforceHelper.ollamaModel` | `codellama:latest` | 使用する Ollama モデル |
 
-[MIT License / MIT 许可证]
+## 🛠️ 開発者向け
+
+### ローカル開発
+```bash
+# 依存関係のインストール
+npm install
+
+# コンパイル
+npm run compile
+
+# 開発モード（ウォッチ）
+npm run watch
+
+# テスト実行
+npm test
+```
+
+### プロジェクト構造
+```
+src/
+├── extension.ts              # 拡張機能エントリーポイント
+├── services/
+│   ├── aiService.ts         # AI サービス統合
+│   └── flowchartGenerator.ts # フローチャート生成
+├── webview/
+│   └── ChatViewProvider.ts  # チャット UI とフローチャート表示
+└── utils/
+    └── codeExtractor.ts     # コード抽出ユーティリティ
+```
+
+## 📋 システム要件
+
+- VS Code 1.98.0 以上
+- インターネット接続（DeepSeek API 使用時）
+- Node.js 20.x 以上（開発時）
+
+## 🤝 コントリビューション
+
+プルリクエストやイシューの報告を歓迎します！
+
+## 📄 ライセンス
+
+MIT License
+
+## 🔗 リンク
+
+- [GitHub Repository](https://github.com/boma086/itforce-helper)
+- [DeepSeek API](https://platform.deepseek.com/)
 
 ---
 
-**Made with ❤️ by ITForce Team / 由 ITForce 团队用 ❤️ 制作**
+![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/boma086/itforce-helper?utm_source=oss&utm_medium=github&utm_campaign=boma086%2Fitforce-helper&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)
 
-
+**Made with ❤️ by ITForce Team**

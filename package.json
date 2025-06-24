@@ -1,43 +1,66 @@
 {
   "name": "itforce-helper",
-  "displayName": "ITForce Helper - AI Code Assistant / AI 代码助手",
-  "description": "🤖 AI-powered code assistant (Requires DeepSeek API key). Configure via: 1) VS Code Settings (itforceHelper.deepseekApiKey) or 2) Environment Variable (DEEPSEEK_API_KEY). / AI 驱动的代码助手（需要 DeepSeek API 密钥）。配置方式：1) VS Code 设置 或 2) 环境变量。",
+  "displayName": "ITForce Helper - AI-Powered Code Visualization",
+  "description": "🚀 Generate beautiful flowcharts from Java code automatically. AI-driven, simple and fast code visualization tool. Supports cloud AI APIs and local Ollama models.",
   "publisher": "bruce086",
-  "version": "0.0.71",
-  "categories": ["Programming Languages", "Snippets", "Other"],
+  "version": "0.0.852504",
+  "license": "MIT",
+  "categories": [
+    "Programming Languages",
+    "Snippets",
+    "Other"
+  ],
   "keywords": [
-    "deepseek",
     "ai assistant",
-    "code generation",
-    "AI助手",
-    "代码生成"
+    "code visualization",
+    "flowchart",
+    "java",
+    "mermaid",
+    "code analysis",
+    "ai coding",
+    "ollama",
+    "code helper"
   ],
   "engines": {
     "vscode": "^1.98.0"
   },
   "activationEvents": [
-    "onCommand:itforce-helper.helloWorld",
-    "onCommand:itforce-helper.generate",
     "onStartupFinished"
   ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "itforce-helper.helloWorld",
-        "title": "ITForce: Hello World"
+        "command": "itforce-helper.openChat",
+        "title": "ITForce: Open Chat"
       },
       {
-        "command": "itforce-helper.generate",
-        "title": "ITForce: Generate Code"
+        "command": "itforce-helper.generateFlowchart",
+        "title": "🔄 Generate Flowchart"
       }
     ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "resourceExtname == .java",
+          "command": "itforce-helper.generateFlowchart",
+          "group": "itforce"
+        }
+      ],
+      "explorer/context": [
+        {
+          "when": "resourceExtname == .java",
+          "command": "itforce-helper.generateFlowchart",
+          "group": "itforce"
+        }
+      ]
+    },
     "viewsContainers": {
       "activitybar": [
         {
           "id": "itforce-helper",
           "title": "ITForce Helper",
-          "icon": "resources/icon.svg"
+          "icon": "resources/robot-icon.svg"
         }
       ]
     },
@@ -56,13 +79,38 @@
         "itforceHelper.deepseekApiKey": {
           "type": "string",
           "default": "",
-          "markdownDescription": "**Required**: DeepSeek API key. Without this, AI features won't work. Set here or via DEEPSEEK_API_KEY environment variable. / **必需**: DeepSeek API 密钥。没有此项，AI 功能将无法使用。在此设置或通过环境变量设置。",
+          "markdownDescription": "**Legacy**: Cloud AI API Key (deprecated, use cloudApiKey instead). Can also be set via DEEPSEEK_API_KEY environment variable.",
           "order": 1
         },
         "itforceHelper.deepseekApiUrl": {
           "type": "string",
           "default": "https://api.deepseek.com/v1/chat/completions",
-          "description": "API URL for DeepSeek AI"
+          "description": "Legacy: Cloud AI API URL (deprecated, use cloudApiUrl instead)"
+        },
+        "itforceHelper.ollamaUrl": {
+          "type": "string",
+          "default": "http://localhost:11434",
+          "description": "Ollama server URL for local AI models"
+        },
+        "itforceHelper.defaultOllamaModel": {
+          "type": "string",
+          "default": "",
+          "description": "Default Ollama model to use for code analysis"
+        },
+        "itforceHelper.ollamaModel": {
+          "type": "string",
+          "default": "codellama:latest",
+          "description": "Ollama model name for code processing"
+        },
+        "itforceHelper.cloudApiUrl": {
+          "type": "string",
+          "default": "https://api.deepseek.com/v1/chat/completions",
+          "description": "Cloud AI API URL (supports OpenAI-compatible APIs)"
+        },
+        "itforceHelper.cloudApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Cloud AI API Key for authentication"
         }
       }
     }
@@ -79,7 +127,9 @@
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
     "check-types": "tsc --noEmit",
     "lint": "eslint src",
-    "test": "@vscode/test-electron ."
+    "test": "@vscode/test-electron .",
+    "vsce:package": "vsce package",
+    "vsce:publish": "vsce publish"
   },
   "dependencies": {
     "node-fetch": "^2.6.12"
@@ -99,5 +149,9 @@
     "jest": "^29.7.0",
     "npm-run-all": "^4.1.5",
     "typescript": "^5.3.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/boma086/itforce-helper.git"
   }
 }
